@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL:"http://localhost:3000/",
 });
 
 const ACCESS_TOKEN = "accessToken";
@@ -25,20 +25,19 @@ api.interceptors.response.use(
         const refeshTokenOld = localStorage.getItem(REFRESH_TOKEN);
         if (!refeshTokenOld) throw new Error("refresh token not available");
 
-        const res = await axios.post(`http://localhost:3000/auth/refresh`, {
+        const res = await axios.post(import.meta.env.VITE_BACKEND_URL + `/auth/refresh`, {
           refeshToken: refeshTokenOld,
         });
 
-        const { accessToken, refeshToken } = res.data.result;
+        const { accessToken } = res.data.result;
         localStorage.setItem(ACCESS_TOKEN, accessToken);
-        localStorage.setItem(REFRESH_TOKEN, refeshToken);
         originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         console.log("Refresh token expried - redirecting to login");
         localStorage.removeItem(ACCESS_TOKEN);
         localStorage.removeItem(REFRESH_TOKEN);
-        window.location.href = "Path.login";
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }

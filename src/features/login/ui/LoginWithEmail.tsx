@@ -3,10 +3,17 @@ import { Label } from "../../../shared/ui/label";
 import { Button } from "../../../shared/ui/button";
 import { useState } from "react";
 import { submit } from "../model/useLoginWithEmail";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginWithEmail() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleLogin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await submit(email, password, navigate);
+  };
 
   return (
     <div className="flex flex-col">
@@ -35,11 +42,7 @@ export default function LoginWithEmail() {
         ></Input>
       </div>
       <div className="flex flex-col gap-3 mt-5">
-        <Button
-          type="submit"
-          className="w-full"
-          onClick={() => submit(email, password)}
-        >
+        <Button type="button" className="w-full" onClick={handleLogin}>
           Login
         </Button>
         <Button variant="outline" className="w-full">
