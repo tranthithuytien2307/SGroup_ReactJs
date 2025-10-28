@@ -1,13 +1,11 @@
 import { loginApi } from "../api/loginApi";
+import { useAuthStore } from "@/entities/user/model/authStore";
 
 export async function submit(
   email: string,
   password: string,
   navigate: (path: string) => void
 ) {
-  const ACCESS_TOKEN = "accessToken";
-  const REFRESH_TOKEN = "refreshToken";
-
   try {
     const res = await loginApi.login({ email, password });
     const { accessToken, refreshToken } = res.data;
@@ -15,8 +13,8 @@ export async function submit(
     console.log("accessToken: ", accessToken);
     console.log("refreshToken: ", refreshToken);
 
-    localStorage.setItem(ACCESS_TOKEN, accessToken);
-    localStorage.setItem(REFRESH_TOKEN, refreshToken);
+    const { setTokens } = useAuthStore.getState();
+    setTokens(accessToken, refreshToken);
 
     navigate("/dashboard");
   } catch (err) {
