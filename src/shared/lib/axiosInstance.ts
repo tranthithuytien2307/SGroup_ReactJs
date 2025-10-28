@@ -1,7 +1,8 @@
 import axios from "axios";
+import { useAuthStore } from "@/entities/user/model/authStore";
 
 const api = axios.create({
-  baseURL:"http://localhost:3000/",
+  baseURL: "http://localhost:3000",
 });
 
 const ACCESS_TOKEN = "accessToken";
@@ -16,32 +17,48 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (respone) => respone,
-  async (err) => {
-    const originalRequest = err.config;
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
 
-    if (err.response?.status === 403) {
+    if (
+      (error.response?.status === 403 || error.response?.status === 401) &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/auth/refresh")
+    ) {
+      originalRequest._retry = true;
       try {
-        const refeshTokenOld = localStorage.getItem(REFRESH_TOKEN);
-        if (!refeshTokenOld) throw new Error("refresh token not available");
+        const refreshTokenOld = localStorage.getItem(REFRESH_TOKEN);
+        if (!refreshTokenOld) throw new Error("No refresh token");
 
-        const res = await axios.post(import.meta.env.VITE_BACKEND_URL + `/auth/refresh`, {
-          refeshToken: refeshTokenOld,
+        const res = await axios.post(`http://localhost:3000/auth/refresh`, {
+          refreshToken: refreshTokenOld,
         });
 
-        const { accessToken } = res.data.result;
+        const { accessToken } = res.data;
+        console.log("Refreshed accessToken:", accessToken);
+
         localStorage.setItem(ACCESS_TOKEN, accessToken);
+        const { setTokens } = useAuthStore.getState();
+        setTokens(accessToken, refreshTokenOld);
+
         originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
+
         return api(originalRequest);
       } catch (refreshError) {
-        console.log("Refresh token expried - redirecting to login");
+        console.warn("Refresh token expired - redirecting to login");
         localStorage.removeItem(ACCESS_TOKEN);
         localStorage.removeItem(REFRESH_TOKEN);
+
+        const { clearTokens } = useAuthStore.getState();
+        clearTokens();
+
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }
-    return Promise.reject(err);
+
+    return Promise.reject(error);
   }
 );
 
