@@ -1,6 +1,6 @@
 import { Button } from "@/shared/ui/button";
-import { Kanban, User } from "lucide-react";
 import { WorkspaceIcon } from "@/shared/ui/icon/WorkspaceIcon";
+import BoardCard from "./BoardCard";
 
 type Board = {
   id: number | string;
@@ -42,29 +42,7 @@ export default function WorkspaceSection({
         </Button>
       </div>
 
-      <div className="flex gap-5">
-        {boards.map((board) => (
-          <div
-            key={board.id}
-            className="min-w-70 border rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-md transition cursor-pointer p-4"
-          >
-            <div className="p-3 flex flex-col gap-2">
-              <div className="flex gap-2 items-center">
-                <Kanban className="h-4 w-4" />
-                <h3 className="font-medium text-gray-800">{board.name}</h3>
-              </div>
-              <p className="text-sm text-gray-500">Main</p>
-              <div className="flex justify-between">
-                <p>1-3 lists</p>
-                <div className="flex gap-1 items-center">
-                  <User className="w-4 h-4" />
-                  <p>1</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <BoardCard boards={boards} />
     </div>
   );
 }
