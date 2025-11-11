@@ -41,12 +41,9 @@ export default function LoginWithEmail() {
           onChange={(e) => setPassword(e.target.value)}
         ></Input>
       </div>
-      <div className="flex flex-col gap-3 mt-5">
+      <div className="mt-5">
         <Button type="button" className="w-full" onClick={handleLogin}>
           Login
-        </Button>
-        <Button variant="outline" className="w-full">
-          Login with Google
         </Button>
       </div>
     </div>

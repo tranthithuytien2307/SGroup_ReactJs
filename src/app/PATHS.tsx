@@ -5,6 +5,9 @@ import { lazy, Suspense } from "react";
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const GoogleCallbackPage = lazy(
+  () => import("@/features/login/ui/GoogleCallbackPage")
+);
 
 export default function PATHS() {
   return (
@@ -20,6 +23,10 @@ export default function PATHS() {
             }
           />
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/auth/google/callback"
+            element={<GoogleCallbackPage />}
+          />
           <Route
             path="/"
             element={

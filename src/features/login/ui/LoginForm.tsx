@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "../../../shared/ui/card";
 import LoginWithEmail from "./LoginWithEmail";
+import LoginWithGoogle from "./LoginWithGoogle";
 
 export default function LoginForm() {
   return (
@@ -21,6 +22,7 @@ export default function LoginForm() {
           <form>
             <div className="flex flex-col gap-5">
               <LoginWithEmail />
+              <LoginWithGoogle />
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}

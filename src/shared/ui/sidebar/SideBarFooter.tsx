@@ -1,10 +1,8 @@
-import { Button } from "../button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "../dropdown-menu";
 

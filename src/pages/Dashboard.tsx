@@ -40,7 +40,7 @@ export default function Dashboard() {
   return (
     <div className="flex w-full">
       <SideBar />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1">
         <div className="flex flex-col h-screen">
           <div className="pl-4 border-b">
             <p className="text-lg font-semibold text-gray-900 p-4">Dashborad</p>
