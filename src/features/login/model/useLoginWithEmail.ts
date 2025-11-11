@@ -8,7 +8,7 @@ export async function submit(
 ) {
   try {
     const res = await loginApi.login({ email, password });
-    const { accessToken, refreshToken } = res.data;
+    const { accessToken, refreshToken } = res.data.responseObject;
 
     console.log("accessToken: ", accessToken);
     console.log("refreshToken: ", refreshToken);
