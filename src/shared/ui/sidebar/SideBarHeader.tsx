@@ -11,7 +11,7 @@ import {
 import { Plus, Circle } from "lucide-react";
 
 type Workspace = {
-  id: string | number;
+  id: number;
   name: string;
   description: string;
   countBoard: number;
@@ -50,34 +50,33 @@ export default function SideBarHeader({
           </div>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent
-          className="rounded-lg border bg-white shadow-xl p-1 z-50 absolute translate-x-[60%] translate-y-[-20%]"
-        >
+        <DropdownMenuContent className="rounded-lg border bg-white shadow-xl p-1 z-50 absolute translate-x-[60%] translate-y-[-20%]">
           <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
 
-          {workspaces.map((ws) => (
-            <DropdownMenuItem
-              key={ws.id}
-              className="flex items-center justify-between gap-6"
-              onClick={() => setSelected(ws)}
-            >
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-600 rounded-lg text-white">
-                  <WorkspaceIcon />
+          {Array.isArray(workspaces) &&
+            workspaces.map((ws) => (
+              <DropdownMenuItem
+                key={ws.id}
+                className="flex items-center justify-between gap-6"
+                onClick={() => setSelected(ws)}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-blue-600 rounded-lg text-white">
+                    <WorkspaceIcon />
+                  </div>
+                  <div>
+                    <p className="font-medium whitespace-nowrap">{ws.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {ws.countBoard} {ws.countBoard === 1 ? "board" : "boards"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium whitespace-nowrap">{ws.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {ws.countBoard} {ws.countBoard === 1 ? "board" : "boards"}
-                  </p>
-                </div>
-              </div>
 
-              {selected?.id === ws.id && (
-                <Circle className="w-1 h-1 fill-blue-500 text-blue-500" />
-              )}
-            </DropdownMenuItem>
-          ))}
+                {selected?.id === ws.id && (
+                  <Circle className="w-1 h-1 fill-blue-500 text-blue-500" />
+                )}
+              </DropdownMenuItem>
+            ))}
 
           <DropdownMenuSeparator />
 

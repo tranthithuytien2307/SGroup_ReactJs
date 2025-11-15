@@ -5,6 +5,7 @@ interface UserType {
   name: string;
   email: string;
   role: string;
+  avatar_url: string | null;
 }
 
 export async function getInformationUser(
@@ -12,7 +13,7 @@ export async function getInformationUser(
 ) {
   try {
     const res = await userAPI.getInformation();
-    setDataUser(res.data.result);
+    setDataUser(res.data.responseObject);
   } catch (err) {
     console.error(err);
   }

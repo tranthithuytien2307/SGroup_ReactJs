@@ -32,7 +32,7 @@ api.interceptors.response.use(
         const refreshTokenOld = localStorage.getItem(REFRESH_TOKEN);
         if (!refreshTokenOld) throw new Error("No refresh token");
 
-        const res = await axios.post(`http://localhost:3000/auth/refresh`, {
+        const res = await axios.post(`http://localhost:3000/api/auth/refresh`, {
           refreshToken: refreshTokenOld,
         });
 

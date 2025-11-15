@@ -13,6 +13,7 @@ interface UserType {
   name: string;
   email: string;
   role: string;
+  avatar_url: string | null;
 }
 
 interface SideBarFooterProps {
@@ -26,13 +27,23 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
         <DropdownMenuTrigger asChild>
           <footer className="w-full border-t p-4 flex items-center justify-between hover:bg-accent data-[state=open]:bg-accent">
             <div className="flex items-center gap-3">
-              <img
-                src="/avatar-default.png"
-                alt="User Avatar"
-                width={48}
-                height={48}
-                className="rounded-full border border-gray-200 object-cover"
-              />
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt="User Avatar"
+                  width={48}
+                  height={48}
+                  className="rounded-full border border-gray-200 object-cover"
+                />
+              ) : (
+                <img
+                  src="/avatar-default.png"
+                  alt="User Avatar"
+                  width={48}
+                  height={48}
+                  className="rounded-full border border-gray-200 object-cover"
+                />
+              )}
               <div className="flex flex-col leading-tight">
                 <span className="font-medium text-gray-800">
                   {user?.name ?? "Chưa có tên"}
@@ -49,13 +60,23 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
           <DropdownMenuItem>
             <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img
-                  src="/avatar-default.png"
-                  alt="User Avatar"
-                  width={48}
-                  height={48}
-                  className="rounded-full border border-gray-200 object-cover"
-                />
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt="User Avatar"
+                    width={48}
+                    height={48}
+                    className="rounded-full border border-gray-200 object-cover"
+                  />
+                ) : (
+                  <img
+                    src="/avatar-default.png"
+                    alt="User Avatar"
+                    width={48}
+                    height={48}
+                    className="rounded-full border border-gray-200 object-cover"
+                  />
+                )}
                 <div className="flex flex-col leading-tight">
                   <span className="font-normal text-gray-800 text-sm">
                     {user?.name ?? "Chưa có tên"}
