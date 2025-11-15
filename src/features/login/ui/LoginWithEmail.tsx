@@ -41,7 +41,7 @@ export default function LoginWithEmail() {
           onChange={(e) => setPassword(e.target.value)}
         ></Input>
       </div>
-      <div className="mt-5">
+      <div className="mt-5 cursor-pointer">
         <Button type="button" className="w-full" onClick={handleLogin}>
           Login
         </Button>

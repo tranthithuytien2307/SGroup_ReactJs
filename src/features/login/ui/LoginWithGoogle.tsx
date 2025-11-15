@@ -28,7 +28,7 @@ export default function LoginWithGoogle() {
   return (
     <Button
       variant="outline"
-      className="w-full"
+      className="w-full cursor-pointer"
       onClick={() => (window.location.href = getAuthUrl())}
     >
       Login with Google
