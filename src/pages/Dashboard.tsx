@@ -3,33 +3,36 @@ import WorkspaceSection from "@/features/dashboard/ui/WorkspaceSection";
 import { workspaceAPI } from "@/shared/api/workspaceAPI";
 import { useEffect, useState } from "react";
 import DashboardContentHeader from "@/features/dashboard/ui/DashboardContentHeader";
+import HeaderContent from "@/shared/ui/ContentHeader";
+import { useWorkspace } from "@/shared/context/WorkspaceContext";
 
 type Board = {
-  id: number | string;
+  id: number;
   name: string;
+  description?: string;
+  cover_url?: string;
 };
 
 type Workspace = {
-  id: string | number;
+  id: number;
   name: string;
   description: string;
   boards: Board[];
   countBoard: number;
 };
 
-
 export default function Dashboard() {
-  const [data, setData] = useState<Workspace[]>([]);
+  const { setWorkspaces, workspaces } = useWorkspace();
 
   const onAddWorkspace = () => {
     alert("hi");
-  }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await workspaceAPI.getWorkspaces();
-        setData(res.data);
+        setWorkspaces(res.data.responseObject);
       } catch (err) {
         console.log("Err: ", err);
       }
@@ -42,25 +45,28 @@ export default function Dashboard() {
       <SideBar />
       <div className="flex-1">
         <div className="flex flex-col h-screen">
-          <div className="pl-4 border-b">
-            <p className="text-lg font-semibold text-gray-900 p-4">Dashborad</p>
-          </div>
+          <HeaderContent headerContent="Dashboard" />
           <div className="flex-1 p-8 flex-col gap-3 overflow-y-auto">
             <DashboardContentHeader onAddWorkspace={onAddWorkspace} />
             <div className="flex-1">
-              {data.map((ws) => (
-                <WorkspaceSection
-                  key={ws.id}
-                  id={ws.id}
-                  name={ws.name}
-                  description={ws.description}
-                  boards={ws.boards}
-                  countBoard={ws.countBoard}
-                  onAddBoard={(id) =>
-                    console.log("Thêm board vào workspace", id)
-                  }
-                />
-              ))}
+              {Array.isArray(workspaces) &&
+                workspaces.map((ws) => (
+                  <WorkspaceSection
+                    key={ws.id}
+                    id={ws.id}
+                    name={ws.name}
+                    description={ws.description}
+                    boards={ws.boards}
+                    countBoard={ws.countBoard}
+                    onAddBoard={(workspaceId, boardData) => {
+                      console.log(
+                        "Add board to workspace:",
+                        workspaceId,
+                        boardData
+                      );
+                    }}
+                  />
+                ))}
             </div>
           </div>
         </div>
