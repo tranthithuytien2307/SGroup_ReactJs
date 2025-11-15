@@ -11,6 +11,7 @@ interface UserType {
   name: string;
   email: string;
   role: string;
+  avatar_url: string | null;
 }
 
 interface Board {
@@ -19,7 +20,7 @@ interface Board {
 }
 
 type Workspace = {
-  id: string | number;
+  id: number;
   name: string;
   description: string;
   countBoard: number;
@@ -35,19 +36,20 @@ export default function SideBar() {
     getInformationUser(setDataUser);
     const fetchData = async () => {
       const res = await workspaceAPI.getWorkspaces();
-      setWorkspaces(res.data);
-      setSelected(res.data[0]);
+      setWorkspaces(res.data.responseObject);
+      setSelected(res.data.responseObject[0]);
+      console.log("workspace: ", res.data.responseObject);
     };
     fetchData();
   }, []);
 
   useEffect(() => {
-    if (!selected?.id) return; 
+    if (!selected?.id) return;
 
     const fetchData = async () => {
       try {
         const res = await boardAPI.getBoardByWorkspaceId(selected.id);
-        setBoards(res.data);
+        setBoards(res.data.responseObject);
       } catch (err) {
         console.error("Error fetching boards:", err);
       }

@@ -1,19 +1,25 @@
 import { Button } from "@/shared/ui/button";
 import { WorkspaceIcon } from "@/shared/ui/icon/WorkspaceIcon";
 import BoardCard from "./BoardCard";
+import GenericFormModal from "@/shared/ui/modal/GenericFormModal";
+import { useState } from "react";
 
 type Board = {
-  id: number | string;
+  id: number;
   name: string;
+  description?: string;
 };
 
 type WorkspaceSectionProps = {
-  id: number | string;
+  id: number;
   name: string;
   description?: string;
   boards: Board[];
   countBoard: number;
-  onAddBoard?: (workspaceId: number | string) => void;
+  onAddBoard?: (
+    workspaceId: number ,
+    data: { name: string; description?: string }
+  ) => void;
 };
 
 export default function WorkspaceSection({
@@ -24,6 +30,25 @@ export default function WorkspaceSection({
   countBoard,
   onAddBoard,
 }: WorkspaceSectionProps) {
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const handleCreate = (data: { name: string; description?: string }) => {
+    onAddBoard?.(id, data);
+    setCreateModalOpen(false);
+  };
+
+  const modalCreateTexts = {
+    title: "Create New Board",
+    description:
+      "Create a new board to organize your project tasks and collaborate with your team.",
+    labelName: "Board Title",
+    placeholderName: "Enter board title",
+    labelDescription: "Description (optional)",
+    placeholderDescription: "Enter board description",
+    buttonCancel: "Cancel",
+    buttonAction: "Create Board",
+  };
+
   return (
     <div className="md-10 pt-7 pb-5">
       <div className="flex justify-between items-start mb-4 w-full">
@@ -37,12 +62,23 @@ export default function WorkspaceSection({
           <p className="text-gray-500 text-sm">{description}</p>
           <p className="text-xs text-gray-400 mt-1">{countBoard} boards</p>
         </div>
-        <Button onClick={() => onAddBoard?.(id)} className="cursor-pointer">
-          + Add Moard
+        <Button
+          onClick={() => setCreateModalOpen(true)}
+          className="cursor-pointer"
+        >
+          + Add Board
         </Button>
       </div>
 
-      <BoardCard boards={boards} />
+      <BoardCard workspaceId={id} />
+
+      <GenericFormModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSubmit={handleCreate}
+        texts={modalCreateTexts}
+        autoFocusName={true}
+      />
     </div>
   );
 }

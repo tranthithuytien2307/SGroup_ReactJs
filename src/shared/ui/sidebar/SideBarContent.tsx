@@ -53,14 +53,15 @@ export default function SideBarContent({ boards }: Props) {
                 Chưa có board nào
               </p>
             )}
-            {boards.map((board) => (
-              <button
-                key={board.id}
-                className="text-sm hover:bg-gray-100 px-2 py-1 rounded-md text-left transition-colors cursor-pointer"
-              >
-                {board.name}
-              </button>
-            ))}
+            {Array.isArray(boards) &&
+              boards.map((board) => (
+                <button
+                  key={board.id}
+                  className="text-sm hover:bg-gray-100 px-2 py-1 rounded-md text-left transition-colors cursor-pointer"
+                >
+                  {board.name}
+                </button>
+              ))}
           </div>
         )}
       </div>
