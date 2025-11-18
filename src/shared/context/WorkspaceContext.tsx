@@ -4,6 +4,7 @@ import type { Workspace } from "@/shared/types";
 import {
   updateBoardInModel,
   deleteBoardInModel,
+  createBoardInModel,
 } from "@/shared/model/workspaceModel";
 
 export type BoardUpdateData = {
@@ -16,6 +17,10 @@ type WorkspaceContextType = {
   workspaces: any[];
   loading: boolean;
   setWorkspaces: React.Dispatch<React.SetStateAction<Workspace[]>>;
+  createBoard: (
+    workspaceId: number,
+    data: { name: string; description?: string; cover_url?: string }
+  ) => Promise<void>;
   updateBoard: (
     workspaceId: number,
     boardId: number,
@@ -31,6 +36,13 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { workspaces, setWorkspaces, loading } = useWorkspaces();
 
+  const createBoard = async (
+    workspaceId: number,
+    data: { name: string; description?: string; cover_url?: string }
+  ) => {
+    await createBoardInModel(setWorkspaces, workspaceId, data);
+  };
+
   const updateBoard = async (
     workspaceId: number,
     boardId: number,
@@ -45,7 +57,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <WorkspaceContext.Provider
-      value={{ workspaces, loading, updateBoard, deleteBoard, setWorkspaces }}
+      value={{ workspaces, loading, createBoard, updateBoard, deleteBoard, setWorkspaces }}
     >
       {children}
     </WorkspaceContext.Provider>

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,6 +22,12 @@ interface SideBarFooterProps {
 }
 
 export default function SideBarFooter({ user }: SideBarFooterProps) {
+  const navigate = useNavigate()
+  
+  const goToProfile = () => {
+    navigate('/profile')
+  }
+
   return (
     <div className="relative p-2 h-auto">
       <DropdownMenu>
@@ -91,7 +98,7 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem className="flex items-center gap-2">
+          <DropdownMenuItem className="flex items-center gap-2" onClick={goToProfile}>
             <User className="w-4 h-4" />
             Profile
           </DropdownMenuItem>

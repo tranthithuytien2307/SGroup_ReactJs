@@ -1,6 +1,30 @@
 import { boardAPI } from "@/shared/api/boardAPI";
 import type { Workspace } from "@/shared/types";
 
+export async function createBoardInModel(
+  setWorkspaces: React.Dispatch<React.SetStateAction<Workspace[]>>,
+  workspaceId: number,
+  data: { name: string; description?: string; cover_url?: string }
+) {
+  const res = await boardAPI.createBoard({
+    workspaceId,
+    name: data.name,
+    description: data.description || "",
+    cover_url: data.cover_url || ""
+  });
+
+  const newBoard = res.data.responseObject;
+
+  setWorkspaces(prev =>
+    prev.map(ws =>
+      ws.id === workspaceId
+        ? { ...ws, boards: [...ws.boards, newBoard], countBoard: ws.countBoard + 1 }
+        : ws
+    )
+  );
+}
+
+
 export const updateBoardInModel = async (
   setWorkspaces: React.Dispatch<React.SetStateAction<Workspace[]>>,
   workspaceId: number,

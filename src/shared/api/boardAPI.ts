@@ -16,7 +16,12 @@ export const boardAPI = {
     cover_url: string;
     workspaceId: number;
   }) => {
-    return api.post("/board", { name, workspaceId, description, cover_url });
+    return api.post("/board", { 
+      name, 
+      workspace_id: String(workspaceId), 
+      description: description ?? null, 
+      cover_url: cover_url ?? null 
+    });
   },
 
   updateBoard: ({

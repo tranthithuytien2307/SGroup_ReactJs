@@ -1,28 +1,28 @@
 import SideBar from "@/shared/ui/sidebar/SideBar";
 import WorkspaceSection from "@/features/dashboard/ui/WorkspaceSection";
 import { workspaceAPI } from "@/shared/api/workspaceAPI";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import DashboardContentHeader from "@/features/dashboard/ui/DashboardContentHeader";
 import HeaderContent from "@/shared/ui/ContentHeader";
 import { useWorkspace } from "@/shared/context/WorkspaceContext";
 
-type Board = {
-  id: number;
-  name: string;
-  description?: string;
-  cover_url?: string;
-};
+// type Board = {
+//   id: number;
+//   name: string;
+//   description?: string;
+//   cover_url?: string;
+// };
 
-type Workspace = {
-  id: number;
-  name: string;
-  description: string;
-  boards: Board[];
-  countBoard: number;
-};
+// type Workspace = {
+//   id: number;
+//   name: string;
+//   description: string;
+//   boards: Board[];
+//   countBoard: number;
+// };
 
 export default function Dashboard() {
-  const { setWorkspaces, workspaces } = useWorkspace();
+  const { createBoard, setWorkspaces, workspaces } = useWorkspace();
 
   const onAddWorkspace = () => {
     alert("hi");
@@ -58,13 +58,9 @@ export default function Dashboard() {
                     description={ws.description}
                     boards={ws.boards}
                     countBoard={ws.countBoard}
-                    onAddBoard={(workspaceId, boardData) => {
-                      console.log(
-                        "Add board to workspace:",
-                        workspaceId,
-                        boardData
-                      );
-                    }}
+                  onAddBoard={async (workspaceId, boardData) => {
+                    await createBoard(workspaceId, boardData);
+                  }}
                   />
                 ))}
             </div>
