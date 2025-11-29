@@ -58,8 +58,8 @@ export default function Dashboard() {
                     description={ws.description}
                     boards={ws.boards}
                     countBoard={ws.countBoard}
-                  onAddBoard={async (workspaceId, boardData) => {
-                    await createBoard(workspaceId, boardData);
+                  onAddBoard={async (workspace_id, boardData) => {
+                    await createBoard(workspace_id, boardData);
                   }}
                   />
                 ))}

@@ -1,52 +1,56 @@
 import api from "../lib/axiosInstance";
 
+export interface CreateBoardPayload {
+  name: string;
+  description?: string | undefined;
+  workspace_id: number;
+}
+
+export interface UpdateBoardPayload {
+  id: number;
+  name?: string;
+  description?: string | null;
+}
+
 export const boardAPI = {
-  getBoardByWorkspaceId: (workspaceId: number | string) => {
-    return api.get(`/board/workspace/${workspaceId}`);
-  },
-
-  createBoard: ({
-    name,
-    description,
-    cover_url,
-    workspaceId,
-  }: {
-    name: string;
-    description: string;
-    cover_url: string;
-    workspaceId: number;
-  }) => {
-    return api.post("/board", { 
-      name, 
-      workspace_id: String(workspaceId), 
-      description: description ?? null, 
-      cover_url: cover_url ?? null 
-    });
-  },
-
-  updateBoard: ({
-    name,
-    description,
-    cover_url,
-    boardId,
-  }: {
-    name: string;
-    description: string;
-    cover_url: string;
-    boardId: number;
-  }) => {
-    return api.put(`/board/${boardId}`, { name, cover_url, description });
-  },
-
-  deleteBoard: (boardId: number) => {
-    return api.delete(`/board/${boardId}`);
+  getBoardsByWorkspaceId: (workspace_id: number) => {
+    return api.get(`/board/workspace/${workspace_id}`);
   },
 
   getBoards: () => {
-    return api.get("/board");
+    return api.get(`/board`);
   },
 
-  getBoard: (boardId: number) => {
-    return api.get(`/board/${boardId}`);
+  getBoard: (id: number) => {
+    return api.get(`/board/${id}`);
+  },
+
+  createBoard: (payload: CreateBoardPayload) => {
+    return api.post(`/board`, {
+      name: payload.name,
+      workspace_id: payload.workspace_id,
+      description: payload.description,
+    });
+  },
+
+  updateBoard: (payload: UpdateBoardPayload) => {
+    return api.put(`/board/${payload.id}`, {
+      ...(payload.name !== undefined && { name: payload.name }),
+      ...(payload.description !== undefined && {
+        description: payload.description,
+      })
+    });
+  },
+
+  deleteBoard: (id: number) => {
+    return api.delete(`/board/${id}`);
+  },
+
+  archiveBoard: (id: number) => {
+    return api.post(`/board/archive/${id}`);
+  },
+
+  unarchiveBoard: (id: number) => {
+    return api.post(`/board/unarchive/${id}`);
   },
 };

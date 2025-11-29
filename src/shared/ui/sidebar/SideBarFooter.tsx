@@ -10,11 +10,15 @@ import {
 import { LogOut, Settings, User } from "lucide-react";
 
 interface UserType {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  role: string;
   avatar_url: string | null;
+  role: {
+    id: number;
+    name: "admin" | "staff" | "user";
+    description?: string;
+  };
 }
 
 interface SideBarFooterProps {

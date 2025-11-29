@@ -1,11 +1,15 @@
 import { userAPI } from "@/shared/api/userAPI";
 
 interface UserType {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  role: string;
   avatar_url: string | null;
+  role: {
+    id: number;
+    name: "admin" | "staff" | "user";
+    description?: string;
+  };
 }
 
 export async function getInformationUser(
@@ -13,7 +17,19 @@ export async function getInformationUser(
 ) {
   try {
     const res = await userAPI.getInformation();
-    setDataUser(res.data.responseObject);
+    const user = res.data.responseObject;
+
+    setDataUser({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatar_url: user.avatar_url,
+      role: {
+        id: user.role?.id,
+        name: user.role?.name,
+        description: user.role?.description,
+      }
+    });
   } catch (err) {
     console.error(err);
   }

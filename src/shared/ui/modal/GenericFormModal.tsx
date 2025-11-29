@@ -46,9 +46,9 @@ export default function GenericFormModal({
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open && initialData) {
-      setName(initialData.name);
-      setDescription(initialData.description || "");
+    if (open) {
+      setName(initialData?.name || "");
+      setDescription(initialData?.description || "");
     }
   }, [open, initialData]);
 

@@ -3,49 +3,63 @@ import type { Workspace } from "@/shared/types";
 
 export async function createBoardInModel(
   setWorkspaces: React.Dispatch<React.SetStateAction<Workspace[]>>,
-  workspaceId: number,
-  data: { name: string; description?: string; cover_url?: string }
+  workspace_id: number,
+  data: { name: string; description?: string }
 ) {
-  const res = await boardAPI.createBoard({
-    workspaceId,
+  const payload: any = {
     name: data.name,
-    description: data.description || "",
-    cover_url: data.cover_url || ""
-  });
+    workspace_id: Number(workspace_id)
+  }
 
+  if (data.description) {
+    payload.description = data.description;
+  }
+
+  const res = await boardAPI.createBoard(payload);
   const newBoard = res.data.responseObject;
 
   setWorkspaces(prev =>
     prev.map(ws =>
-      ws.id === workspaceId
+      ws.id === workspace_id
         ? { ...ws, boards: [...ws.boards, newBoard], countBoard: ws.countBoard + 1 }
         : ws
     )
   );
 }
 
-
 export const updateBoardInModel = async (
   setWorkspaces: React.Dispatch<React.SetStateAction<Workspace[]>>,
-  workspaceId: number,
-  boardId: number,
-  data: { name: string; description?: string; cover_url?: string }
+  workspace_id: number,
+  id: number,
+  data: { name: string; description?: string }
 ) => {
   try {
     await boardAPI.updateBoard({
-      name: data.name,
-      description: data.description ?? "",
-      cover_url: data.cover_url ?? "",
-      boardId,
+      id,
+      ...(data.name && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description }),
     });
+
+    const updatedBoardFields: Partial<Workspace["boards"][number]> = {
+      name: data.name,
+    };
+
+    if (data.description !== undefined) {
+      updatedBoardFields.description = data.description;
+    }
 
     setWorkspaces((prev) =>
       prev.map((ws) =>
-        ws.id === workspaceId
+        ws.id === workspace_id
           ? {
               ...ws,
               boards: ws.boards.map((board) =>
-                board.id === boardId ? { ...board, ...data } : board
+                board.id === id
+                  ? {
+                      ...board,
+                      ...updatedBoardFields,
+                    }
+                  : board
               ),
             }
           : ws
@@ -59,20 +73,20 @@ export const updateBoardInModel = async (
 
 export const deleteBoardInModel = async (
   setWorkspaces: React.Dispatch<React.SetStateAction<Workspace[]>>,
-  workspaceId: number,
-  boardId: number
+  workspace_id: number,
+  id: number
 ) => {
   if (!confirm("Xác nhận xóa Board?")) return;
 
   try {
-    await boardAPI.deleteBoard(boardId);
+    await boardAPI.deleteBoard(id);
 
     setWorkspaces((prev) =>
       prev.map((ws) =>
-        ws.id === workspaceId
+        ws.id === workspace_id
           ? {
               ...ws,
-              boards: ws.boards.filter((b) => b.id !== boardId),
+              boards: ws.boards.filter((b) => b.id !== id),
               countBoard: ws.countBoard - 1,
             }
           : ws
@@ -82,4 +96,24 @@ export const deleteBoardInModel = async (
     console.error("Delete failed:", error);
     throw error;
   }
+};
+
+export const archiveBoardInModel = async (
+  setWorkspaces: any,
+  workspace_id: number,
+  boardId: number
+) => {
+  await boardAPI.archiveBoard(boardId);
+
+  setWorkspaces((prev: any[]) =>
+    prev.map((ws) =>
+      ws.id === workspace_id
+        ? {
+            ...ws,
+            boards: ws.boards.filter((b: any) => b.id !== boardId),
+            countBoard: ws.countBoard - 1,
+          }
+        : ws
+    )
+  );
 };

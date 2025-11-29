@@ -5,12 +5,12 @@ import {
   updateBoardInModel,
   deleteBoardInModel,
   createBoardInModel,
+  archiveBoardInModel
 } from "@/shared/model/workspaceModel";
 
 export type BoardUpdateData = {
   name: string;
   description?: string;
-  cover_url?: string;
 };
 
 type WorkspaceContextType = {
@@ -18,15 +18,16 @@ type WorkspaceContextType = {
   loading: boolean;
   setWorkspaces: React.Dispatch<React.SetStateAction<Workspace[]>>;
   createBoard: (
-    workspaceId: number,
-    data: { name: string; description?: string; cover_url?: string }
+    workspace_id: number,
+    data: { name: string; description?: string }
   ) => Promise<void>;
   updateBoard: (
-    workspaceId: number,
-    boardId: number,
+    workspace_id: number,
+    id: number,
     data: BoardUpdateData
   ) => Promise<void>;
-  deleteBoard: (workspaceId: number, boardId: number) => Promise<void>;
+  deleteBoard: (workspace_id: number, id: number) => Promise<void>;
+  archiveBoard: (workspace_id: number, id: number) => Promise<void>;
 };
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
@@ -37,27 +38,31 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { workspaces, setWorkspaces, loading } = useWorkspaces();
 
   const createBoard = async (
-    workspaceId: number,
-    data: { name: string; description?: string; cover_url?: string }
+    workspace_id: number,
+    data: { name: string; description?: string }
   ) => {
-    await createBoardInModel(setWorkspaces, workspaceId, data);
+    await createBoardInModel(setWorkspaces, workspace_id, data);
   };
 
   const updateBoard = async (
-    workspaceId: number,
-    boardId: number,
+    workspace_id: number,
+    id: number,
     data: BoardUpdateData
   ) => {
-    await updateBoardInModel(setWorkspaces, workspaceId, boardId, data);
+    await updateBoardInModel(setWorkspaces, workspace_id, id, data);
   };
 
-  const deleteBoard = async (workspaceId: number, boardId: number) => {
-    await deleteBoardInModel(setWorkspaces, workspaceId, boardId);
+  const deleteBoard = async (workspace_id: number, id: number) => {
+    await deleteBoardInModel(setWorkspaces, workspace_id, id);
+  };
+
+  const archiveBoard = async (workspace_id: number, id: number) => {
+    await archiveBoardInModel(setWorkspaces, workspace_id, id);
   };
 
   return (
     <WorkspaceContext.Provider
-      value={{ workspaces, loading, createBoard, updateBoard, deleteBoard, setWorkspaces }}
+      value={{ workspaces, loading, createBoard, updateBoard, deleteBoard, archiveBoard, setWorkspaces }}
     >
       {children}
     </WorkspaceContext.Provider>

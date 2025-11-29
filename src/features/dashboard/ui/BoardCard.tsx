@@ -1,4 +1,4 @@
-import { Ellipsis, Kanban, SquarePen, Trash, User } from "lucide-react";
+import { Ellipsis, Kanban, SquarePen, Trash, User, Archive } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -17,15 +17,15 @@ type Board = {
 };
 
 type BoardCardProps = {
-  workspaceId: number;
+  workspace_id: number;
 };
 
-export default function BoardCard({ workspaceId }: BoardCardProps) {
-  const { workspaces, updateBoard, deleteBoard } = useWorkspace();
+export default function BoardCard({ workspace_id }: BoardCardProps) {
+  const { workspaces, updateBoard, archiveBoard, deleteBoard } = useWorkspace();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
 
-  const workspace = workspaces.find((ws) => ws.id === workspaceId);
+  const workspace = workspaces.find((ws) => ws.id === workspace_id);
   const boards = workspace?.boards ?? [];
 
   const handleEdit = (board: Board) => {
@@ -36,24 +36,28 @@ export default function BoardCard({ workspaceId }: BoardCardProps) {
   const handleEditSave = async (data: {
     name: string;
     description?: string;
-    cover_url?: string;
   }) => {
     if (!selectedBoard) return;
-    data.cover_url = "http:xxxxx";
-    await updateBoard(workspaceId, selectedBoard.id, data);
+    await updateBoard(workspace_id, selectedBoard.id, data);
     setEditModalOpen(false);
   };
 
+  const handleArchive = async (board: Board) => {
+    if (confirm(`Are you sure you want to archive the board "${board.name}"?`)) {
+      await archiveBoard(workspace_id, board.id);
+    }
+  }
+
   const handleDelete = async (board: any) => {
-    await deleteBoard(workspaceId, board.id);
+    await deleteBoard(workspace_id, board.id);
   };
 
   const modalEditTexts = {
     title: "Edit Board",
-    description: "Update your board title and description.",
+    description: "what Do You Want To Change?",
     labelName: "Board Title",
     placeholderName: "Enter board title",
-    labelDescription: "Description (optional)",
+    labelDescription: "Description",
     placeholderDescription: "Enter board description",
     buttonCancel: "Cancel",
     buttonAction: "Save Changes",
@@ -94,6 +98,12 @@ export default function BoardCard({ workspaceId }: BoardCardProps) {
                     <SquarePen className="h-4 w-4" /> Edit Board
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    onSelect={() => handleArchive(board)}
+                    className="flex items-center gap-2 px-3 py-2"
+                  >
+                    <Archive className="h-4 w-4" /> Archive Board
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     className="flex items-center gap-2 px-3 py-2 text-red-500"
                     onSelect={() => handleDelete(board)}
                   >
@@ -108,7 +118,7 @@ export default function BoardCard({ workspaceId }: BoardCardProps) {
                 <Kanban className="h-4 w-4" />
                 <h3 className="font-medium text-gray-800">{board.name}</h3>
               </div>
-              <p className="text-sm text-gray-500">Main</p>
+              <p className="text-sm text-gray-500">{board.description}</p>
               <div className="flex justify-between">
                 <p>1-3 lists</p>
                 <div className="flex gap-1 items-center">
