@@ -4,9 +4,11 @@ import type { Workspace } from "@/shared/types";
 import {
   updateBoardInModel,
   deleteBoardInModel,
-} from "@/shared/model/workspaceModel";
+  createBoardInModel,
+} from "@/shared/model/boardModel";
+import { createWorkspaceInModel } from "../model/workspaceModel";
 
-export type BoardUpdateData = {
+export type BoardData = {
   name: string;
   description?: string;
   cover_url?: string;
@@ -19,9 +21,14 @@ type WorkspaceContextType = {
   updateBoard: (
     workspaceId: number,
     boardId: number,
-    data: BoardUpdateData
+    data: BoardData
   ) => Promise<void>;
+  createBoard: (workspaceId: number, data: BoardData) => Promise<void>;
   deleteBoard: (workspaceId: number, boardId: number) => Promise<void>;
+  createWorkspace: (data: {
+    name: string;
+    description?: string;
+  }) => Promise<void>;
 };
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
@@ -34,18 +41,37 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const updateBoard = async (
     workspaceId: number,
     boardId: number,
-    data: BoardUpdateData
+    data: BoardData
   ) => {
     await updateBoardInModel(setWorkspaces, workspaceId, boardId, data);
+  };
+
+  const createBoard = async (workspaceId: number, data: BoardData) => {
+    await createBoardInModel(setWorkspaces, workspaceId, data);
   };
 
   const deleteBoard = async (workspaceId: number, boardId: number) => {
     await deleteBoardInModel(setWorkspaces, workspaceId, boardId);
   };
 
+  const createWorkspace = async (data: {
+    name: string;
+    description?: string;
+  }) => {
+    await createWorkspaceInModel(setWorkspaces, data);
+  };
+
   return (
     <WorkspaceContext.Provider
-      value={{ workspaces, loading, updateBoard, deleteBoard, setWorkspaces }}
+      value={{
+        workspaces,
+        loading,
+        updateBoard,
+        deleteBoard,
+        setWorkspaces,
+        createBoard,
+        createWorkspace,
+      }}
     >
       {children}
     </WorkspaceContext.Provider>

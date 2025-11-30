@@ -110,10 +110,18 @@ export default function GenericFormModal({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleCancel} className="mr-2">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            className="mr-2 cursor-pointer"
+          >
             {texts.buttonCancel}
           </Button>
-          <Button onClick={handleSubmit} disabled={requireName && !name.trim()}>
+          <Button
+            className="cursor-pointer"
+            onClick={handleSubmit}
+            disabled={requireName && !name.trim()}
+          >
             {texts.buttonAction}
           </Button>
         </DialogFooter>
