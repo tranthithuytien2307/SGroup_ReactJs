@@ -3,40 +3,33 @@ import { WorkspaceIcon } from "@/shared/ui/icon/WorkspaceIcon";
 import BoardCard from "./BoardCard";
 import GenericFormModal from "@/shared/ui/modal/GenericFormModal";
 import { useState } from "react";
-
-type Board = {
-  id: number;
-  name: string;
-  description?: string;
-};
+import { useWorkspace } from "@/shared/context/WorkspaceContext";
 
 type WorkspaceSectionProps = {
   id: number;
   name: string;
   description?: string;
-  boards: Board[];
   countBoard: number;
-  onAddBoard?: (
-    workspaceId: number ,
-    data: { name: string; description?: string }
-  ) => void;
 };
 
 export default function WorkspaceSection({
   id,
   name,
   description,
-  boards,
   countBoard,
-  onAddBoard,
 }: WorkspaceSectionProps) {
+  const { createBoard } = useWorkspace();
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const handleCreate = (data: { name: string; description?: string }) => {
-    onAddBoard?.(id, data);
+  const handleCreate = async (data: {
+    name: string;
+    description?: string;
+    cover_url?: string;
+  }) => {
+    data.cover_url = "http:xxxxx";
+    await createBoard(id, data);
     setCreateModalOpen(false);
   };
-
   const modalCreateTexts = {
     title: "Create New Board",
     description:

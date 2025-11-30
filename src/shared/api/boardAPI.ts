@@ -9,14 +9,19 @@ export const boardAPI = {
     name,
     description,
     cover_url,
-    workspaceId,
+    workspace_id,
   }: {
     name: string;
     description: string;
     cover_url: string;
-    workspaceId: number;
+    workspace_id: number;
   }) => {
-    return api.post("/board", { name, workspaceId, description, cover_url });
+    return api.post("/board", {
+      name,
+      description,
+      cover_url,
+      workspace_id,
+    });
   },
 
   updateBoard: ({
@@ -30,6 +35,7 @@ export const boardAPI = {
     cover_url: string;
     boardId: number;
   }) => {
+    cover_url = "https://xxxx";
     return api.put(`/board/${boardId}`, { name, cover_url, description });
   },
 

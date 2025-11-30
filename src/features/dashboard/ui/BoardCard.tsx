@@ -9,12 +9,7 @@ import {
 import { useState } from "react";
 import GenericFormModal from "@/shared/ui/modal/GenericFormModal";
 import { useWorkspace } from "@/shared/context/WorkspaceContext";
-
-type Board = {
-  id: number;
-  name: string;
-  description?: string;
-};
+import type { Board } from "@/shared/types";
 
 type BoardCardProps = {
   workspaceId: number;
