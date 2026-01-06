@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import LoadingSpinner from "../LoadingSpinner";
 import { ChevronDown, ChevronRight, LayoutGrid } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Board {
   id: string | number;
@@ -11,9 +12,14 @@ interface Props {
 }
 
 export default function SideBarContent({ boards }: Props) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleBoardDetail = (id: number | string) => {
+    navigate(`/dashboard/board/${id}`);
+  };
 
   return (
     <div className="flex flex-col gap-4 p-2">
@@ -58,6 +64,7 @@ export default function SideBarContent({ boards }: Props) {
                 <button
                   key={board.id}
                   className="text-sm hover:bg-gray-100 px-2 py-1 rounded-md text-left transition-colors cursor-pointer"
+                  onClick={() => handleBoardDetail(board.id)}
                 >
                   {board.name}
                 </button>

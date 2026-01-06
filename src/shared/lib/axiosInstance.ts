@@ -23,7 +23,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (
-      (error.response?.status === 403 || error.response?.status === 401) &&
+      error.response?.status === 403 &&
       !originalRequest._retry &&
       !originalRequest.url.includes("/auth/refresh")
     ) {
@@ -36,7 +36,7 @@ api.interceptors.response.use(
           refreshToken: refreshTokenOld,
         });
 
-        const { accessToken } = res.data;
+        const { accessToken } = res.data.responseObject;
         console.log("Refreshed accessToken:", accessToken);
 
         localStorage.setItem(ACCESS_TOKEN, accessToken);
