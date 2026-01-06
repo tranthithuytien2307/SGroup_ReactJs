@@ -7,15 +7,19 @@ import { workspaceAPI } from "@/shared/api/workspaceAPI";
 import { boardAPI } from "@/shared/api/boardAPI";
 
 interface UserType {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  role: string;
   avatar_url: string | null;
+  role: {
+    id: number;
+    name: "admin" | "staff" | "user";
+    description?: string;
+  };
 }
 
 interface Board {
-  id: string | number;
+  id: number;
   name: string;
 }
 
@@ -34,11 +38,12 @@ export default function SideBar() {
 
   useEffect(() => {
     getInformationUser(setDataUser);
+
     const fetchData = async () => {
       const res = await workspaceAPI.getWorkspaces();
-      setWorkspaces(res.data.responseObject);
-      setSelected(res.data.responseObject[0]);
-      console.log("workspace: ", res.data.responseObject);
+      const ws = res.data.responseObject;
+      setWorkspaces(ws);
+      setSelected(ws[0]);
     };
     fetchData();
   }, []);
@@ -46,20 +51,20 @@ export default function SideBar() {
   useEffect(() => {
     if (!selected?.id) return;
 
-    const fetchData = async () => {
+    const fetchBoards = async () => {
       try {
-        const res = await boardAPI.getBoardByWorkspaceId(selected.id);
+        const res = await boardAPI.getBoardsByWorkspaceId(selected.id);
         setBoards(res.data.responseObject);
       } catch (err) {
         console.error("Error fetching boards:", err);
       }
     };
 
-    fetchData();
+    fetchBoards();
   }, [selected]);
 
   return (
-    <div className="flex flex-col justify-between h-screen border-r-[1px] border-r-gray-200 bg-gray-50 min-w-[64px]">
+    <div className="flex flex-col justify-between h-screen border-r border-gray-200 bg-gray-50 min-w-[64px]">
       <div className="flex flex-col justify-between">
         <SideBarHeader
           workspaces={workspaces}

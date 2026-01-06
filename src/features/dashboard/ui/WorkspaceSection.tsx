@@ -10,6 +10,10 @@ type WorkspaceSectionProps = {
   name: string;
   description?: string;
   countBoard: number;
+  onAddBoard?: (
+    workspace_id: number ,
+    data: { name: string; description?: string }
+  ) => void;
 };
 
 export default function WorkspaceSection({
@@ -36,7 +40,7 @@ export default function WorkspaceSection({
       "Create a new board to organize your project tasks and collaborate with your team.",
     labelName: "Board Title",
     placeholderName: "Enter board title",
-    labelDescription: "Description (optional)",
+    labelDescription: "Description",
     placeholderDescription: "Enter board description",
     buttonCancel: "Cancel",
     buttonAction: "Create Board",
@@ -63,7 +67,7 @@ export default function WorkspaceSection({
         </Button>
       </div>
 
-      <BoardCard workspaceId={id} />
+      <BoardCard workspace_id={id} />
 
       <GenericFormModal
         open={createModalOpen}
