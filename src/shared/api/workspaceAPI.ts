@@ -2,7 +2,7 @@ import api from "../lib/axiosInstance";
 
 export const workspaceAPI = {
   getWorkspaces: () => {
-    return api.get("/workspace");
+    return api.get("/workspace/byUser");
   },
 
   getWorkspace: (workspaceId: number) => {
