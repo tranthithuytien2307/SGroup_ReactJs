@@ -6,11 +6,16 @@ import { WorkspaceProvider } from "@/shared/context/WorkspaceContext";
 import Layout from "@/shared/ui/layout/Layout";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
+const VerifyEmailPage = lazy(
+  () => import("@/features/register/ui/VerifyEmailPage")
+);
 const GoogleCallbackPage = lazy(
   () => import("@/features/login/ui/GoogleCallbackPage")
 );
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Board = lazy(() => import("@/pages/Board"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 
 export default function PATHS() {
   return (
@@ -34,6 +39,7 @@ export default function PATHS() {
             path="/auth/google/callback"
             element={<GoogleCallbackPage />}
           />
+          {/* DEFAULT → DASHBOARD (WITH AUTH) */}
           <Route
             path="/"
             element={
@@ -55,6 +61,33 @@ export default function PATHS() {
                     <Board />
                   </Layout>
                 </WorkspaceProvider>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Dashboard route */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <WorkspaceProvider>
+                  <Dashboard />
+                </WorkspaceProvider>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />

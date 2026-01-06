@@ -38,7 +38,9 @@ api.interceptors.response.use(
 
         const { accessToken } = res.data.responseObject;
         console.log("Refreshed accessToken:", accessToken);
+        if (!accessToken) throw new Error("Refresh failed");
 
+        
         localStorage.setItem(ACCESS_TOKEN, accessToken);
         const { setTokens } = useAuthStore.getState();
         setTokens(accessToken, refreshTokenOld);

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,11 +10,15 @@ import {
 import { LogOut, Settings, User } from "lucide-react";
 
 interface UserType {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  role: string;
   avatar_url: string | null;
+  role: {
+    id: number;
+    name: "admin" | "staff" | "user";
+    description?: string;
+  };
 }
 
 interface SideBarFooterProps {
@@ -21,6 +26,12 @@ interface SideBarFooterProps {
 }
 
 export default function SideBarFooter({ user }: SideBarFooterProps) {
+  const navigate = useNavigate()
+  
+  const goToProfile = () => {
+    navigate('/profile')
+  }
+
   return (
     <div className="relative p-2 h-auto">
       <DropdownMenu>
@@ -91,7 +102,7 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem className="flex items-center gap-2">
+          <DropdownMenuItem className="flex items-center gap-2" onClick={goToProfile}>
             <User className="w-4 h-4" />
             Profile
           </DropdownMenuItem>

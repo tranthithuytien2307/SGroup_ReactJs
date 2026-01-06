@@ -4,7 +4,6 @@ export type Board = {
   id: ID;
   name: string;
   description?: string;
-  cover_url?: string;
 };
 
 export type Workspace = {

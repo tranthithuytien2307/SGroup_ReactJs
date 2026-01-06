@@ -5,8 +5,8 @@ export const workspaceAPI = {
     return api.get("/workspace");
   },
 
-  getWorkspace: (workspaceId: number) => {
-    return api.get(`/workspace/${workspaceId}`);
+  getWorkspace: (workspace_id: number) => {
+    return api.get(`/workspace/${workspace_id}`);
   },
 
   createWorkspace: ({
@@ -23,21 +23,21 @@ export const workspaceAPI = {
     name,
     description,
     is_active,
-    workspaceId,
+    workspace_id,
   }: {
     name: string;
     description: string;
     is_active: boolean;
-    workspaceId: number;
+    workspace_id: number;
   }) => {
-    return api.put(`/workspace/${workspaceId}`, {
+    return api.put(`/workspace/${workspace_id}`, {
       name,
       description,
       is_active,
     });
   },
 
-  deleteWorkspace: (workspaceId: number) => {
-    return api.delete(`/workspace/${workspaceId}`);
+  deleteWorkspace: (workspace_id: number) => {
+    return api.delete(`/workspace/${workspace_id}`);
   },
 };
