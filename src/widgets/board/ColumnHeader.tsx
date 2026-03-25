@@ -49,7 +49,7 @@ export default function ColumnHeader({
   };
 
   return (
-    <div className="relative flex items-center justify-between px-2 py-1">
+    <div className="relative flex items-center justify-between gap-2 px-2 py-1 min-w-0">
       {isEditing ? (
         <input
           ref={inputRef}
@@ -64,23 +64,43 @@ export default function ColumnHeader({
             }
           }}
           className="
-            w-full rounded-md border border-gray-300
-            px-2 py-1 text-sm
-            outline-none focus:ring-2 focus:ring-gray-300
-          "
+          w-full min-w-0
+          rounded-md border border-gray-300
+          px-2 py-1 text-sm
+          outline-none focus:ring-2 focus:ring-gray-300
+        "
         />
       ) : (
-        <span
-          className="font-medium cursor-pointer px-1 rounded hover:bg-gray-100"
-          onClick={() => setIsEditing(true)}
-        >
-          {title}
-        </span>
+        <div className="relative flex-1 min-w-0 group">
+          <span
+            className="block truncate font-medium cursor-pointer px-1 rounded hover:bg-gray-100"
+            onClick={() => setIsEditing(true)}
+          >
+            {title}
+          </span>
+
+          <div
+            className="
+      pointer-events-none
+      absolute left-0 top-full mt-1
+      hidden group-hover:block
+      z-20
+      max-w-xs
+      rounded-md
+      bg-gray-900 text-white text-xs
+      px-2 py-1
+      shadow-lg
+      break-words
+    "
+          >
+            {title}
+          </div>
+        </div>
       )}
 
       <button
         onClick={() => setShowMenu((v) => !v)}
-        className="ml-2 rounded-md p-1 hover:bg-gray-100"
+        className="shrink-0 rounded-md p-1 hover:bg-gray-100"
       >
         <MoreVertical className="h-5 w-5 text-gray-600" />
       </button>
@@ -88,10 +108,7 @@ export default function ColumnHeader({
       {showMenu && (
         <div
           ref={menuRef}
-          className="
-            absolute right-2 top-9 z-10 w-32
-            rounded-lg border bg-white shadow-md
-          "
+          className="absolute right-2 top-9 z-10 w-32 rounded-lg border bg-white shadow-md"
         >
           <button
             onClick={() => {

@@ -21,12 +21,14 @@ import { createList } from "../features/list/model/createList";
 import { deleteList } from "../features/list/model/deleteList";
 import { updateCard } from "../features/card/model/updateCard";
 import { deleteCrad } from "../features/card/model/deleteCard";
-
-// const users = [
-//   { name: "John Doe", email: "john@example.com", avatar: "/avatars/john.png" },
-//   { name: "Jane Smith", email: "jane@example.com" },
-//   { name: "Bob Johnson", email: "bob@example.com", avatar: "/avatars/bob.png" },
-// ];
+import { getBoardMember } from "../features/board/model/getBoardMember";
+import type {
+  BoardMember,
+  WorkspaceMember,
+} from "../entities/users/type/types";
+import { getWorkspaceMembers } from "../features/workspace/model/getWorkspaceMembers";
+import { useCardStore } from "../features/card/model/cardStore";
+import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 
 export default function BoardPage() {
   const { id } = useParams();
@@ -37,12 +39,69 @@ export default function BoardPage() {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [listTitle, setListTitle] = useState("");
+  const [boardMember, setBoardMember] = useState<BoardMember[]>([]);
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>(
+    [],
+  );
+
+  const moveCardStore = useCardStore((state) => state.moveCard);
+  const cards = useCardStore((state) => state.cards);
+  const setCards = useCardStore((state) => state.setCards);
+
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (
+      !destination ||
+      (destination.droppableId === source.droppableId &&
+        destination.index === source.index)
+    ) {
+      return;
+    }
+
+    const cardId = parseInt(draggableId);
+    const toListId = parseInt(destination.droppableId);
+    const newIndex = destination.index;
+
+    const oldCards = [...cards];
+    const newCards = Array.from(cards);
+
+    const movedCardIndex = newCards.findIndex((c) => c.id === cardId);
+    if (movedCardIndex !== -1) {
+      const [movedCard] = newCards.splice(movedCardIndex, 1);
+      movedCard.list_id = toListId;
+
+      const otherCards = newCards.filter((c) => c.list_id !== toListId);
+      const targetListCards = newCards.filter((c) => c.list_id === toListId);
+      targetListCards.splice(newIndex, 0, movedCard);
+
+      setCards([...otherCards, ...targetListCards]);
+    }
+
+    try {
+      const boardId = board?.id;
+      if (boardId) {
+        await moveCardStore(cardId, boardId, toListId, newIndex);
+      }
+    } catch (error) {
+      console.error("API Error, rolling back to original state");
+      setCards(oldCards);
+      alert("Không thể di chuyển thẻ, vui lòng thử lại!");
+    }
+  };
+
+  useEffect(() => {
+    const allCards = lists.flatMap((list) => list.cards || []);
+    setCards(allCards);
+  }, [lists]);
 
   useEffect(() => {
     const fetchLink = async () => {
       if (!boardId) return;
       const boardData = await getBoardById(boardId);
       const listData = await getListByBoardId(boardId);
+      const members = await getBoardMember(boardId);
+      setBoardMember(members);
 
       const normalizedLists: List[] = listData.map((list: List) => ({
         ...list,
@@ -53,8 +112,42 @@ export default function BoardPage() {
 
       setBoard(boardData);
     };
+
     fetchLink();
   }, [boardId]);
+
+  useEffect(() => {
+    const fetchWorkspaceMembers = async () => {
+      if (!board?.workspace_id) return;
+
+      const members = await getWorkspaceMembers(board.workspace_id);
+
+      setWorkspaceMembers(members);
+
+      console.log("workspaceMembers:", members);
+    };
+
+    fetchWorkspaceMembers();
+  }, [board]);
+
+  useEffect(() => {
+    if (!isModalOpen || !boardId || !board) return;
+
+    const fetchInviteLink = async () => {
+      if (board.invite_enabled) {
+        try {
+          const link = await linkShareInvite(boardId);
+          setShareLink(link);
+        } catch {
+          setShareLink(null);
+        }
+      } else {
+        setShareLink(null);
+      }
+    };
+
+    fetchInviteLink();
+  }, [isModalOpen, boardId, board?.invite_enabled]);
 
   const onrenameList = async (listId: number, newTitle: string) => {
     setLists((prev) =>
@@ -82,13 +175,24 @@ export default function BoardPage() {
   };
 
   const handleCreateLink = async () => {
-    regenerateLinkShare(boardId);
+    if (!boardId) return;
+
+    await regenerateLinkShare(boardId);
+
     const link = await linkShareInvite(boardId);
     setShareLink(link);
+
+    setBoard((prev) => (prev ? { ...prev, invite_enabled: true } : prev));
   };
 
   const handleDeleteLink = async () => {
-    disableLinkShare(boardId);
+    if (!boardId) return;
+
+    await disableLinkShare(boardId);
+
+    setShareLink(null);
+
+    setBoard((prev) => (prev ? { ...prev, invite_enabled: false } : prev));
   };
 
   const onChangeBoardName = async (name: string) => {
@@ -112,7 +216,7 @@ export default function BoardPage() {
       is_archived: false,
       archived_at: null,
       description: null,
-      strat_date: null,
+      start_date: null,
       deadline_date: null,
       is_completed: false,
       cover_color: null,
@@ -230,77 +334,83 @@ export default function BoardPage() {
   };
 
   return (
-    <div className="flex-1 flex-col h-screen">
-      <BoardHeader
-        boardName={board?.name || ""}
-        handleInviteUser={() => setIsModalOpen(true)}
-        onChangeBoardName={onChangeBoardName}
-      />
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className="flex flex-1 flex-col h-screen">
+        <div className="flex flex-1 flex-col h-screen">
+          <BoardHeader
+            boardName={board?.name || ""}
+            handleInviteUser={() => setIsModalOpen(true)}
+            onChangeBoardName={onChangeBoardName}
+            boardMember={boardMember}
+          />
 
-      <div className="flex-1 overflow-x-auto">
-        <div className="flex items-start space-x-4 p-4">
-          {lists &&
-            lists.map((list) => (
-              <BoardList
-                key={list.id}
-                id={list.id}
-                title={list.name}
-                cards={Array.isArray(list.cards) ? list.cards : []}
-                onRename={onrenameList}
-                onAddCard={onAddCard}
-                onDeleteList={onDeleteList}
-                onUpdateCard={onUpdateCard}
-                onDeleteCard={onDeleteCard}
-              />
-            ))}
+          <div className="flex-1 overflow-x-auto">
+            <div className="flex items-start space-x-4 p-4">
+              {lists &&
+                lists.map((list) => (
+                  <BoardList
+                    key={list.id}
+                    id={list.id}
+                    title={list.name}
+                    cards={Array.isArray(list.cards) ? list.cards : []}
+                    onRename={onrenameList}
+                    onAddCard={onAddCard}
+                    onDeleteList={onDeleteList}
+                    onUpdateCard={onUpdateCard}
+                    onDeleteCard={onDeleteCard}
+                  />
+                ))}
 
-          <div
-            className="
+              <div
+                className="
               w-72 flex-shrink-0
               rounded-2xl border border-dashed border-gray-300
               bg-gray-50 px-4 py-3
             "
-          >
-            {isAdding ? (
-              <AddItemForm
-                value={listTitle}
-                placeholder="Enter list title..."
-                submitLabel="Add List"
-                onChange={setListTitle}
-                onSubmit={handleAddList}
-                onCancel={handleCancel}
-              />
-            ) : (
-              <button
-                onClick={() => setIsAdding(true)}
-                className="
+              >
+                {isAdding ? (
+                  <AddItemForm
+                    value={listTitle}
+                    placeholder="Enter list title..."
+                    submitLabel="Add List"
+                    onChange={setListTitle}
+                    onSubmit={handleAddList}
+                    onCancel={handleCancel}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setIsAdding(true)}
+                    className="
                   flex w-full items-center gap-2
                   text-sm font-medium text-gray-500
                   hover:text-gray-700
                   transition-colors duration-150
                 "
-              >
-                <Plus className="h-4 w-4" />
-                Add a list
-              </button>
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add a list
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div onBlur={() => hanldeGetLink()}>
+            {isModalOpen && (
+              <InviteModal
+                boardMembers={boardMember}
+                workspaceMembers={workspaceMembers}
+                shareLink={shareLink}
+                setShareLink={setShareLink}
+                onClose={() => setIsModalOpen(false)}
+                onSendInvitation={handleSendInvitation}
+                onCreateLink={handleCreateLink}
+                onDeleteLink={handleDeleteLink}
+              />
             )}
           </div>
         </div>
       </div>
-
-      {/* <div onBlur={() => hanldeGetLink()}>
-        {isModalOpen && (
-          <InviteModal
-            users={users}
-            shareLink={shareLink}
-            setShareLink={setShareLink}
-            onClose={() => setIsModalOpen(false)}
-            onSendInvitation={handleSendInvitation}
-            onCreateLink={handleCreateLink}
-            onDeleteLink={handleDeleteLink}
-          />
-        )}
-      </div> */}
-    </div>
+    </DragDropContext>
   );
 }

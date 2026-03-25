@@ -28,7 +28,7 @@ export default function SideBarHeader({
         <DropdownMenuTrigger asChild>
           <div className="p-2 gap-2 flex items-center cursor-pointer rounded-lg hover:bg-accent transition data-[state=open]:bg-accent">
             <div className="flex items-center gap-2 flex-1">
-              <div className="p-2 bg-blue-600 rounded-lg text-white">
+              <div className="p-2 bg-blue-600 rounded-2xl text-white">
                 <WorkspaceIcon />
               </div>
               <div className="flex flex-col">
@@ -55,7 +55,7 @@ export default function SideBarHeader({
                 onClick={() => setSelected(ws)}
               >
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-blue-600 rounded-lg text-white">
+                  <div className="p-2 bg-blue-600 rounded-2xl text-white">
                     <WorkspaceIcon />
                   </div>
                   <div>

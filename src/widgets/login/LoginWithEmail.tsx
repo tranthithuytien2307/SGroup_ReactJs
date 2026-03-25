@@ -4,15 +4,28 @@ import { Button } from "../../shared/ui/button";
 import { useState } from "react";
 import { submit } from "../../features/auth/login/model/useLoginWithEmail";
 import { useNavigate } from "react-router-dom";
+import { PATH } from "../../shared/config/PATH";
 
 export default function LoginWithEmail() {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleLogin = async (e: React.MouseEvent) => {
     e.preventDefault();
-    await submit(email, password, navigate);
+
+    setError("");
+
+    const result = await submit(email, password);
+
+    if (!result.success) {
+      setError(result.message);
+      return;
+    }
+
+    navigate(PATH.DASHBOARD);
   };
 
   return (
@@ -25,24 +38,40 @@ export default function LoginWithEmail() {
           placeholder="m@example.com"
           required
           onChange={(e) => setEmail(e.target.value)}
-        ></Input>
+        />
       </div>
+
       <div className="flex flex-col gap-3">
         <div className="flex justify-between">
           <Label htmlFor="password">Password</Label>
-          <a href="#" className="text-sm hover:underline">
+          <div
+            className="text-sm hover:underline cursor-pointer"
+            onClick={() => navigate(PATH.FORGOT_PASSWORD)}
+          >
             Forgot your password?
-          </a>
+          </div>
         </div>
+
         <Input
           id="password"
           type="password"
           required
           onChange={(e) => setPassword(e.target.value)}
-        ></Input>
+        />
       </div>
-      <div className="mt-5 cursor-pointer">
-        <Button type="button" className="w-full bg-black text-white" onClick={handleLogin}>
+
+      {error && (
+        <div className="text-red-500 text-sm mt-3 bg-red-50 p-2 rounded border border-red-200">
+          {error}
+        </div>
+      )}
+
+      <div className="mt-5">
+        <Button
+          type="button"
+          className="w-full bg-black text-white"
+          onClick={handleLogin}
+        >
           Login
         </Button>
       </div>

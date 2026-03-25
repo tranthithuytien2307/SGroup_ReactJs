@@ -9,5 +9,7 @@ export const registerApi = {
     name: string;
     email: string;
     password: string;
-  }) => api.post("/auth/register", { name, email, password }),
+  }) => {
+    return api.post("/auth/register", { name, email, password });
+  },
 };

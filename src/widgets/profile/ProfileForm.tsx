@@ -85,11 +85,19 @@ export default function ProfileForm() {
       </div>
 
       <div className="flex gap-3 mt-6">
-        <Button onClick={submitProfile} disabled={loading}>
+        <Button
+          onClick={submitProfile}
+          disabled={loading}
+          className="bg-black text-white"
+        >
           {loading ? "Saving..." : "Save Changes"}
         </Button>
 
-        <Button variant="secondary" onClick={() => window.location.reload()}>
+        <Button
+          variant="secondary"
+          onClick={() => window.location.reload()}
+          className="bg-black text-white"
+        >
           Reset
         </Button>
       </div>

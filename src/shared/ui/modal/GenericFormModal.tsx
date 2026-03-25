@@ -41,7 +41,7 @@ export default function GenericFormModal({
 }: GenericFormModalProps) {
   const [name, setName] = useState(initialData?.name || "");
   const [description, setDescription] = useState(
-    initialData?.description || ""
+    initialData?.description || "",
   );
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,7 +118,7 @@ export default function GenericFormModal({
             {texts.buttonCancel}
           </Button>
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer bg-black text-white"
             onClick={handleSubmit}
             disabled={requireName && !name.trim()}
           >

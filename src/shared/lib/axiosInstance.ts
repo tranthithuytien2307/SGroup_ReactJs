@@ -33,7 +33,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && onUnauthorized) {
+    if (error.response?.status === 403 && onUnauthorized) {
       const newRefreshToken = await onUnauthorized();
       if (newRefreshToken) {
         originalRequest.headers.Authorization = `Bearer ${newRefreshToken}`;

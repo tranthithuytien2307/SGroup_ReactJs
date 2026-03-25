@@ -40,4 +40,8 @@ export const workspaceAPI = {
   deleteWorkspace: (workspace_id: number) => {
     return api.delete(`/workspace/${workspace_id}`);
   },
+
+  getMembers: (workspace_id: number) => {
+    return api.get(`/workspace-member/${workspace_id}/members`);
+  },
 };

@@ -9,9 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "../../shared/ui/card";
+import { PATH } from "../../shared/config/PATH";
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterForm() {
   const { register, loading } = useRegister();
+  const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -61,6 +64,15 @@ export default function RegisterForm() {
         >
           {loading ? "Registering..." : "Register"}
         </Button>
+
+        <div className="mt-6 text-center">
+          <div
+            className="text-sm text-gray-800 hover:underline cursor-pointer"
+            onClick={() => navigate(PATH.LOGIN)}
+          >
+            Back to Login
+          </div>
+        </div>
       </div>
     </Card>
   );

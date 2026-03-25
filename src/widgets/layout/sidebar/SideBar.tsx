@@ -7,6 +7,8 @@ import { boardAPI } from "../../../entities/board/api/boardAPI";
 import type { Board } from "../../../entities/board/model/boardType";
 import { useSelectedWorkspace } from "../../../features/workspace/SelectedWorkspaceContext";
 import { useWorkspace } from "../../../features/workspace/WorkspaceContext";
+import { useNavigate } from "react-router-dom";
+import { PATH } from "../../../shared/config/PATH";
 
 interface UserType {
   id: number;
@@ -25,6 +27,7 @@ export default function SideBar() {
   const [boards, setBoards] = useState<Board[]>([]);
   const { selected, setSelected } = useSelectedWorkspace();
   const { workspaces } = useWorkspace();
+  const navigate = useNavigate();
 
   useEffect(() => {
     getInformationUser(setDataUser);
@@ -44,7 +47,12 @@ export default function SideBar() {
     const fetchBoards = async () => {
       try {
         const res = await boardAPI.getBoardsByWorkspaceId(selected.id);
-        setBoards(res.data.responseObject);
+        const boardList = res.data.responseObject;
+
+        setBoards(boardList);
+        if (boardList.length >= 0) {
+          navigate(PATH.DASHBOARD);
+        }
       } catch (err) {
         console.error("Error fetching boards:", err);
       }
@@ -54,7 +62,7 @@ export default function SideBar() {
   }, [selected]);
 
   return (
-    <div className="flex flex-col justify-between h-screen border-r border-gray-200 bg-gray-50 min-w-[64px]">
+    <div className="flex flex-col justify-between h-screen border-r border-gray-200 bg-gray-50 w-[304px]">
       <div className="flex flex-col justify-between">
         <SideBarHeader
           workspaces={workspaces}

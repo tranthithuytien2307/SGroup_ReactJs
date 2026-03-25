@@ -20,7 +20,6 @@ export function useProfile() {
     try {
       setAvatarLoading(true);
       const res = await userAPI.uploadAvatar(file);
-      alert("Avatar updated!");
       return res.data.responseObject.avatar_url;
     } catch (err: any) {
       alert(err?.response?.data?.message || "Upload avatar failed");

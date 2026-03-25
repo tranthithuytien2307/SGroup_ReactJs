@@ -8,8 +8,11 @@ export function useRegister() {
 
   const register = async (name: string, email: string, password: string) => {
     try {
+      console.log("1");
       setLoading(true);
+      console.log("2");
       await registerApi.register({ name, email, password });
+      console.log("3");
 
       navigate("/verify-email", { state: { email } });
     } catch (err: any) {

@@ -85,26 +85,37 @@ export default function BoardCard({ workspace_id }: BoardCardProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:gird-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {boards.map((board: Board) => (
         <div key={board.id} onClick={() => handleOnBoardDetail(board.id)}>
-          <div className="group relative min-w-250 border rounded-xl shadow-sm bg-white hover:shadow-md transition cursor-pointer p-6">
+          <div
+            className="
+          group relative
+          h-full
+          border rounded-xl
+          bg-white
+          hover:shadow-md
+          transition
+          cursor-pointer
+          p-6
+          flex flex-col
+          justify-between
+        "
+          >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   className="
-                    absolute top-2 right-2 
-                    opacity-0 group-hover:opacity-100
-                    pointer-events-none group-hover:pointer-events-auto
-                    flex items-center justify-center p-2 
-                    hover:bg-gray-100 rounded-md 
-                    transition-opacity duration-150
-                  "
+                absolute top-2 right-2 
+                opacity-0 group-hover:opacity-100
+                pointer-events-none group-hover:pointer-events-auto
+                p-2 hover:bg-gray-100 rounded-md
+                transition
+              "
                 >
                   <Ellipsis className="w-5 h-5 text-gray-500" />
                 </button>
               </DropdownMenuTrigger>
-
               <DropdownMenuPortal>
                 <DropdownMenuContent
                   side="bottom"
@@ -114,38 +125,54 @@ export default function BoardCard({ workspace_id }: BoardCardProps) {
                 >
                   <DropdownMenuItem
                     onSelect={() => handleEdit(board)}
-                    className="flex items-center gap-2 px-3 py-2"
+                    className="flex items-center gap-2"
                   >
-                    <SquarePen className="h-4 w-4" /> Edit Board
+                    <SquarePen className="h-4 w-4" />
+                    Edit Board
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
                     onSelect={() => handleArchive(board)}
-                    className="flex items-center gap-2 px-3 py-2"
+                    className="flex items-center gap-2"
                   >
-                    <Archive className="h-4 w-4" /> Archive Board
+                    <Archive className="h-4 w-4" />
+                    Archive Board
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
-                    className="flex items-center gap-2 px-3 py-2 text-red-500"
                     onSelect={() => handleDelete(board)}
+                    className="flex items-center gap-2 text-red-500"
                   >
-                    <Trash className="h-4 w-4" /> Delete Board
+                    <Trash className="h-4 w-4" />
+                    Delete Board
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenuPortal>
             </DropdownMenu>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-2 items-center">
-                <Kanban className="h-4 w-4" />
-                <h3 className="font-medium text-gray-800">{board.name}</h3>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2 items-start">
+                <Kanban className="h-4 w-4 mt-1 shrink-0" />
+                <h3 className="font-medium text-gray-800 line-clamp-2 break-words">
+                  {board.name}
+                </h3>
               </div>
-              <p className="text-sm text-gray-500">{board.description}</p>
-              <div className="flex justify-between">
-                <p>{board.listCount == 1 ? `${board.listCount} list` : `${board.listCount} lists`}</p>
-                <div className="flex gap-1 items-center">
-                  <User className="w-4 h-4" />
-                  <p>{board.memberCount}</p>
-                </div>
+
+              <p className="text-sm text-gray-500 line-clamp-2 min-h-[40px]">
+                {board.description || "No description"}
+              </p>
+            </div>
+
+            <div className="flex justify-between text-sm text-gray-600 mt-4">
+              <p>
+                {board.listCount === 1
+                  ? `${board.listCount} list`
+                  : `${board.listCount} lists`}
+              </p>
+
+              <div className="flex gap-1 items-center">
+                <User className="w-4 h-4" />
+                <p>{board.memberCount}</p>
               </div>
             </div>
           </div>

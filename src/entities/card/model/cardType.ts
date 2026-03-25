@@ -6,7 +6,7 @@ export type Card = {
   is_archived: boolean;
   archived_at: string | null;
   description: string | null;
-  strat_date: string | null;
+  start_date: string | null;
   deadline_date: string | null;
   is_completed: boolean;
   cover_color: string | null;

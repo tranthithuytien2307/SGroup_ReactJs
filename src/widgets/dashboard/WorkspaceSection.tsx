@@ -12,7 +12,7 @@ type WorkspaceSectionProps = {
   countBoard: number;
   onAddBoard?: (
     workspace_id: number,
-    data: { name: string; description?: string }
+    data: { name: string; description?: string },
   ) => void;
 };
 
@@ -48,20 +48,44 @@ export default function WorkspaceSection({
 
   return (
     <div className="md-10 pt-7 pb-5">
-      <div className="flex justify-between items-start mb-4 w-full">
-        <div>
-          <div className="flex gap-2">
-            <div className="p-2 bg-blue-600 rounded-lg text-white">
-              <WorkspaceIcon />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">{name}</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 w-full">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-sm">
+            <WorkspaceIcon />
           </div>
-          <p className="text-gray-500 text-sm">{description}</p>
-          <p className="text-xs text-gray-400 mt-1">{countBoard} boards</p>
+
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">
+                {name}
+              </h2>
+
+              <span className="px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                {countBoard} boards
+              </span>
+            </div>
+
+            {description && (
+              <p className="text-sm text-gray-500 mt-1 max-w-xl line-clamp-2">
+                {description}
+              </p>
+            )}
+          </div>
         </div>
+
         <Button
           onClick={() => setCreateModalOpen(true)}
-          className="cursor-pointer bg-black text-white"
+          className="
+      cursor-pointer
+      bg-black
+      hover:bg-gray-800
+      text-white
+      px-5
+      h-10
+      rounded-md
+      shadow-sm
+      transition
+    "
         >
           + Add Board
         </Button>

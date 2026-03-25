@@ -1,171 +1,306 @@
-import { X, Tag, CheckSquare, UserPlus, Trash2 } from "lucide-react";
-import { useState } from "react";
-import ActionChip from "./ActionChip";
-import UserChip from "./UserChip";
-import type { Card } from "../../entities/card/model/cardType";
+import { Plus, Calendar, CheckSquare, Users, Paperclip, X } from "lucide-react";
+import { useState, useEffect } from "react";
 
-type Props = {
+import CardLabelsSection from "./cardDetail/CardLabelsSection";
+import CardMembersSection from "./cardDetail/CardMembersSection";
+import CardCommentsSection from "./cardDetail/CardCommentsSection";
+import CardDescriptionSection from "./cardDetail/CardDescriptionSection";
+import AddToCardPopup from "./cardDetail/AddToCardPopup";
+import DateSelectorPopup from "./DateSelectorPopup";
+import LabelSelectorPopup from "./LabelSelectorPopup";
+import CreateLabelPopup from "./label/CreateLabelPopup";
+import EditLabelPopup from "./label/EditLabelPopup";
+import CardDeadline from "./cardDetail/CardDeadlineSection";
+import ChecklistPopup from "./checklist/ChecklistPopup";
+import CardChecklistSection from "./checklist/ChecklistSection";
+
+import { useLabelStore } from "../../features/label/model/labelStore";
+import { useCardStore } from "../../features/card/model/cardStore";
+import { useChecklistStore } from "../../features/checklist/model/checklistStore";
+
+import type { Card } from "../../entities/card/model/cardType";
+import type { Label } from "../../entities/label/model/labelType";
+import CardDetailTitle from "./cardDetail/CardDetailTitle";
+
+export default function CardDetailModal({
+  card,
+  onClose,
+  listTitle,
+  onUpdateCard,
+  onDeleteCard,
+  boardId,
+}: {
   card: Card;
-  listTitle?: string;
   onClose: () => void;
+  listTitle: string;
   onUpdateCard: (
     cardId: number,
     data: { title?: string; description?: string },
   ) => void;
   onDeleteCard: (cardId: number) => void;
-};
+  boardId: number;
+}) {
+  const [openAddPopup, setOpenAddPopup] = useState(false);
+  const [openLabelPopup, setOpenLabelPopup] = useState(false);
+  const [openDatePopup, setOpenDatePopup] = useState(false);
+  const [openCreateLabel, setOpenCreateLabel] = useState(false);
+  const [titleLabel, setTitleLabel] = useState("");
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [openEditLabel, setOpenEditLabel] = useState(false);
+  const [editingLabel, setEditingLabel] = useState<Label | null>(null);
+  const [openChecklistPopup, setOpenChecklistPopup] = useState(false);
 
-export default function CardDetailModal({
-  card,
-  listTitle,
-  onClose,
-  onUpdateCard,
-  onDeleteCard,
-}: Props) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const createLabel = useLabelStore((s) => s.createLabel);
+  const getLabelsByCardId = useLabelStore((s) => s.getLabelsByCardId);
+  const getLabelsByBoardId = useLabelStore((s) => s.getLabelsByBoardId);
+  const updateLabelStore = useLabelStore((s) => s.updateLabel);
+  const deleteLabelStore = useLabelStore((s) => s.deleteLabel);
 
-  const [title, setTitle] = useState(card.title);
-  const [description, setDescription] = useState(card.description || "");
+  const currentCard =
+    useCardStore((state) => state.cards.find((c) => c.id === card.id)) || card;
 
-  const onSave = () => {
-    onDeleteCard(card.id);
-    onClose();
+  const labels = useLabelStore((state) => state.labelsByCardId[card.id] || []);
+  useEffect(() => {
+    getLabelsByBoardId(boardId);
+    getLabelsByCardId(card.id);
+  }, [boardId, card.id]);
+
+  const closeAllPopups = () => {
+    setOpenAddPopup(false);
+    setOpenLabelPopup(false);
+    setOpenDatePopup(false);
+    setOpenCreateLabel(false);
+    setOpenEditLabel(false);
+    setOpenChecklistPopup(false);
+  };
+
+  const handleCreateLabel = async () => {
+    if (!selectedColor) {
+      alert("Vui lòng chọn màu");
+      return;
+    }
+    try {
+      await createLabel(boardId, titleLabel || null, selectedColor);
+      setOpenCreateLabel(false);
+      setTitleLabel("");
+      setSelectedColor(null);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="absolute inset-0" onClick={onClose} />
-
-      <div className="relative z-10 flex w-full max-w-2xl max-h-[90vh] flex-col rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">{listTitle}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 hover:bg-gray-100"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      {/* Container chính: Đặt max-height và flex-col */}
+      <div className="bg-[#f4f5f7] w-full max-w-[1000px] max-h-[90vh] rounded-lg shadow-xl flex flex-col relative overflow-hidden">
+        {/* --- PHẦN 1: HEADER (CỐ ĐỊNH - KHÔNG SCROLL) --- */}
+        <div className="bg-white p-6 pb-4 shrink-0 z-10 border-b">
+          <div className="flex justify-between items-start pr-10">
+            <div className="w-full">
+              <CardDetailTitle
+                card={currentCard}
+                onUpdate={(newTitle) =>
+                  onUpdateCard(currentCard.id, { title: newTitle })
+                }
+              />
+            </div>
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-500 hover:text-black p-2 hover:bg-gray-100 rounded-full"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-6 px-6 py-4">
-          <div className="flex flex-wrap gap-2">
-            <ActionChip icon={<Tag size={16} />} label="Add tags" />
-            <ActionChip icon={<CheckSquare size={16} />} label="Add todo" />
-            <ActionChip icon={<UserPlus size={16} />} label="Add member" />
-          </div>
+        <div className="flex-1 flex flex-col md:flex-row min-h-0">
+          {/* CỘT TRÁI: Toolbar và các Sections */}
+          <div className="flex-1 p-6 space-y-6 bg-white overflow-y-auto custom-scrollbar">
+            {/* TOOLBAR NÚT BẤM */}
+            <div className="flex gap-2 flex-wrap shrink-0">
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    const currentState = openAddPopup;
+                    closeAllPopups();
+                    setOpenAddPopup(!currentState);
+                  }}
+                  className="btn flex items-center gap-2"
+                >
+                  <Plus size={16} /> Thêm
+                </button>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Title</label>
+                {openAddPopup && (
+                  <AddToCardPopup
+                    onClose={() => setOpenAddPopup(false)}
+                    onOpenLabels={() => setOpenLabelPopup(true)}
+                    onOpenDate={() => setOpenDatePopup(true)}
+                    onOpenChecklist={() => setOpenChecklistPopup(true)}
+                  />
+                )}
 
-            {isEditingTitle ? (
-              <input
-                autoFocus
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={() => {
-                  if (title.trim() && title !== card.title) {
-                    onUpdateCard(card.id, { title: title.trim() });
-                  }
-                  setIsEditingTitle(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.currentTarget.blur();
-                  if (e.key === "Escape") {
-                    setTitle(card.title);
-                    setIsEditingTitle(false);
-                  }
-                }}
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-black"
-              />
-            ) : (
-              <div
-                onClick={() => {
-                  setIsEditingTitle(true);
-                  setTitle(card.title);
-                }}
-                className="cursor-pointer rounded px-2 py-1 hover:bg-gray-100 border border-dashed border-gray-300 hover:border-gray-500"
-              >
-                {card.title}
+                {/* Label selector */}
+                {openLabelPopup && (
+                  <LabelSelectorPopup
+                    cardId={card.id}
+                    boardId={boardId}
+                    onBack={() => {
+                      setOpenLabelPopup(false);
+                      setOpenAddPopup(true);
+                    }}
+                    onClose={() => setOpenLabelPopup(false)}
+                    onCreateLabel={() => {
+                      setOpenLabelPopup(false);
+                      setOpenCreateLabel(true);
+                    }}
+                    onEditLabel={(label) => {
+                      setEditingLabel(label);
+                      setOpenLabelPopup(false);
+                      setOpenEditLabel(true);
+                    }}
+                  />
+                )}
+
+                {openCreateLabel && (
+                  <CreateLabelPopup
+                    onBack={() => {
+                      setOpenCreateLabel(false);
+                      setOpenLabelPopup(true);
+                    }}
+                    onClose={() => setOpenCreateLabel(false)}
+                    setTitleLabel={setTitleLabel}
+                    titleLabel={titleLabel}
+                    setSelectedColor={setSelectedColor}
+                    selectedColor={selectedColor}
+                    onCreateLabel={handleCreateLabel}
+                  />
+                )}
+
+                {openEditLabel && editingLabel && (
+                  <EditLabelPopup
+                    onBack={() => {
+                      setOpenEditLabel(false);
+                      setOpenLabelPopup(true);
+                    }}
+                    onClose={() => setOpenEditLabel(false)}
+                    titleLabel={editingLabel.name || ""}
+                    setTitleLabel={(val) =>
+                      setEditingLabel({ ...editingLabel, name: val })
+                    }
+                    selectedColor={editingLabel.color}
+                    setSelectedColor={(color) =>
+                      setEditingLabel({ ...editingLabel, color })
+                    }
+                    onUpdateLabel={async () => {
+                      await updateLabelStore(
+                        editingLabel.id,
+                        card.id,
+                        editingLabel.name,
+                        editingLabel.color,
+                      );
+                      setOpenEditLabel(false);
+                    }}
+                    onDeleteLabel={async () => {
+                      await deleteLabelStore(editingLabel.id, card.id);
+                      setOpenEditLabel(false);
+                    }}
+                  />
+                )}
+
+                {/* Checklist popup */}
+                {openChecklistPopup && (
+                  <ChecklistPopup
+                    card={currentCard}
+                    onClose={() => setOpenChecklistPopup(false)}
+                    onBack={() => {
+                      setOpenChecklistPopup(false);
+                      setOpenAddPopup(true);
+                    }}
+                  />
+                )}
+
+                {/* Date popup */}
+                {openDatePopup && (
+                  <DateSelectorPopup
+                    cardId={card.id}
+                    onBack={() => {
+                      setOpenDatePopup(false);
+                      setOpenAddPopup(true);
+                    }}
+                    onClose={() => setOpenDatePopup(false)}
+                  />
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Description</label>
-
-            {isEditingDesc ? (
-              <textarea
-                autoFocus
-                rows={4}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={() => {
-                  if (description !== card.description) {
-                    onUpdateCard(card.id, { description: description.trim() });
-                  }
-                  setIsEditingDesc(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setDescription(card.description || "");
-                    setIsEditingDesc(false);
-                  }
-                }}
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-black"
-              />
-            ) : (
-              <div
+              <button
                 onClick={() => {
-                  setIsEditingDesc(true);
-                  setDescription(card.description || "");
+                  closeAllPopups();
+                  setOpenDatePopup(true);
                 }}
-                className="min-h-[60px] cursor-pointer rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 border border-dashed border-gray-300 hover:border-gray-500"
+                className="btn flex items-center gap-2"
               >
-                {card.description || "Add a description..."}
-              </div>
-            )}
-          </div>
+                <Calendar size={16} /> Ngày
+              </button>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Assigned Users</p>
-            <div className="flex flex-wrap gap-2">
-              <UserChip name="John Doe" removable />
+              <button
+                onClick={() => {
+                  closeAllPopups();
+                  setOpenChecklistPopup(true);
+                }}
+                className="btn flex items-center gap-2"
+              >
+                <CheckSquare size={16} /> Việc cần làm
+              </button>
+
+              <button className="btn flex items-center gap-2">
+                <Users size={16} /> Thành viên
+              </button>
+
+              <button className="btn flex items-center gap-2">
+                <Paperclip size={16} /> Đính kèm
+              </button>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <p className="text-sm text-gray-500">Available users:</p>
-            <div className="flex flex-wrap gap-2">
-              <UserChip name="Jane Smith" />
-              <UserChip name="Bob Johnson" />
+            {/* Sections */}
+            <div className="flex flex-wrap gap-6">
+              <CardLabelsSection
+                labels={labels}
+                onEditLabel={(label) => {
+                  setEditingLabel(label);
+                  setOpenEditLabel(true);
+                }}
+                onAddLabel={() => setOpenCreateLabel(true)}
+              />
+
+              <CardDeadline
+                deadline={currentCard.deadline_date}
+                onClick={() => setOpenDatePopup(true)}
+              />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Comments</p>
-            <input
-              placeholder="Write a comment..."
-              className="w-full rounded-lg border px-3 py-2 text-sm"
+            <CardMembersSection />
+            <CardDescriptionSection
+              cardId={currentCard.id}
+              initialDescription={currentCard.description || ""}
+              onUpdate={(desc) =>
+                onUpdateCard(currentCard.id, { description: desc })
+              }
             />
+
+            <CardChecklistSection cardId={currentCard.id} />
           </div>
-        </div>
 
-        <div className="flex items-center justify-between border-t px-6 py-4">
-          <button
-            className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-            onClick={() => onSave()}
-          >
-            <Trash2 size={16} />
-            Delete Card
-          </button>
-
-          <button
-            onClick={onClose}
-            className="rounded-lg bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
-          >
-            Close
-          </button>
+          <div className="w-full md:w-[320px] border-l bg-gray-50 flex flex-col shrink-0 overflow-hidden">
+            <div className="p-4 border-b shrink-0 bg-gray-50 z-10">
+              <p className="font-bold text-gray-700 uppercase text-xs tracking-wider">
+                Nhận xét và hoạt động
+              </p>
+            </div>
+            {/* Chỉ vùng này cuộn */}
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <CardCommentsSection />
+            </div>
+          </div>
         </div>
       </div>
     </div>

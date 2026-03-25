@@ -4,4 +4,6 @@ export type Board = {
   description?: string;
   memberCount?: number;
   listCount?: number;
+  invite_enabled?: boolean;
+  workspace_id?: number;
 };
