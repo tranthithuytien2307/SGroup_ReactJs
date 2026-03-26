@@ -32,16 +32,26 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (
+      error.response?.status === 403 &&
+      onUnauthorized &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
 
-    if (error.response?.status === 403 && onUnauthorized) {
-      const newRefreshToken = await onUnauthorized();
-      if (newRefreshToken) {
-        originalRequest.headers.Authorization = `Bearer ${newRefreshToken}`;
-        return api(originalRequest);
+      try {
+        const newAccessToken = await onUnauthorized();
+
+        if (newAccessToken) {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
       }
     }
-    return Promise.reject(error);
-  }
-);
 
+    return Promise.reject(error);
+  },
+);
 export default api;

@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import BoardList from "../widgets/board/BoardList";
 import BoardHeader from "../widgets/board/BoardHeader";
 import InviteModal from "../widgets/board/inviteMember/InviteModal";
@@ -29,6 +29,7 @@ import type {
 import { getWorkspaceMembers } from "../features/workspace/model/getWorkspaceMembers";
 import { useCardStore } from "../features/card/model/cardStore";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
+import { useBoardStore } from "../features/board/model/boardStore";
 
 export default function BoardPage() {
   const { id } = useParams();
@@ -47,7 +48,9 @@ export default function BoardPage() {
   const moveCardStore = useCardStore((state) => state.moveCard);
   const cards = useCardStore((state) => state.cards);
   const setCards = useCardStore((state) => state.setCards);
-
+  const addCardStore = useCardStore((state) => state.addCard);
+  const updateCardStore = useCardStore((state) => state.updateCardDetail);
+  const deleteCardStore = useCardStore((state) => state.deleteCard);
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
@@ -89,6 +92,20 @@ export default function BoardPage() {
       alert("Không thể di chuyển thẻ, vui lòng thử lại!");
     }
   };
+  const currentBoard = useBoardStore((state) => state.currentBoard);
+  const setCurrentBoard = useBoardStore((state) => state.setCurrentBoard);
+
+  const backgroundStyle = currentBoard?.cover_url
+    ? {
+        backgroundImage: `url(${currentBoard.cover_url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : currentBoard?.theme
+      ? {
+          background: currentBoard.theme,
+        }
+      : { backgroundColor: "#f1f2f4" };
 
   useEffect(() => {
     const allCards = lists.flatMap((list) => list.cards || []);
@@ -111,6 +128,7 @@ export default function BoardPage() {
       setLists(normalizedLists);
 
       setBoard(boardData);
+      setCurrentBoard(boardData);
     };
 
     fetchLink();
@@ -206,54 +224,10 @@ export default function BoardPage() {
   };
 
   const onAddCard = async (listId: number, title: string) => {
-    if (!title.trim()) return;
-
-    const tempCard: Card = {
-      id: Date.now(),
-      list_id: listId,
-      title,
-      position: 9999,
-      is_archived: false,
-      archived_at: null,
-      description: null,
-      start_date: null,
-      deadline_date: null,
-      is_completed: false,
-      cover_color: null,
-      cover_image_url: null,
-      cover_url: null,
-    };
-
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === listId
-          ? {
-              ...list,
-              Cards: [
-                ...(Array.isArray(list.cards) ? list.cards : []),
-                tempCard,
-              ],
-            }
-          : list,
-      ),
-    );
-
     try {
-      await createCard(listId, title);
-      const listData = await getListByBoardId(boardId);
-      setLists(listData);
+      await addCardStore(listId, title);
     } catch (error) {
-      setLists((prev) =>
-        prev.map((list) =>
-          list.id === listId
-            ? {
-                ...list,
-                Cards: list.cards.filter((c) => c.id !== tempCard.id),
-              }
-            : list,
-        ),
-      );
-      console.error("Failed to add card: ", error);
+      console.error("Failed to add card:", error);
     }
   };
 
@@ -290,30 +264,19 @@ export default function BoardPage() {
     setIsAdding(false);
   };
 
-  const onUpdateCard = async (
-    cardId: number,
-    data: { title?: string; description?: string },
-  ) => {
-    if (!cardId) return;
+  const onUpdateCard = async (cardId: number, data: any) => {
     try {
-      await updateCard(cardId, data);
-      const listData = await getListByBoardId(boardId);
-      setLists(listData);
+      await updateCardStore(cardId, data);
     } catch (error) {
-      console.error("Failed to update card: ", error);
-      setLists(lists);
+      alert("Cập nhật thất bại!");
     }
   };
 
   const onDeleteCard = async (cardId: number) => {
-    if (!cardId) return;
     try {
-      await deleteCrad(cardId);
-      const listData = await getListByBoardId(boardId);
-      setLists(listData);
+      await deleteCardStore(cardId);
     } catch (error) {
-      console.error("Failed to delete card: ", error);
-      setLists(lists);
+      alert("Xóa thất bại!");
     }
   };
 
@@ -335,13 +298,14 @@ export default function BoardPage() {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex flex-1 flex-col h-screen">
+      <div className="flex flex-1 flex-col h-screen" style={backgroundStyle}>
         <div className="flex flex-1 flex-col h-screen">
           <BoardHeader
             boardName={board?.name || ""}
             handleInviteUser={() => setIsModalOpen(true)}
             onChangeBoardName={onChangeBoardName}
             boardMember={boardMember}
+            boardId={boardId}
           />
 
           <div className="flex-1 overflow-x-auto">

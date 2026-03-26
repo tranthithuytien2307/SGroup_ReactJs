@@ -66,32 +66,32 @@ export const boardAPI = {
     return api.get(`/board/${id}`);
   },
 
-  // createBoard: (payload: CreateBoardPayload) => {
-  //   return api.post(`/board`, {
-  //     name: payload.name,
-  //     workspace_id: payload.workspace_id,
-  //     description: payload.description,
-  //   });
-  // },
-
-  // updateBoard: (payload: UpdateBoardPayload) => {
-  //   return api.put(`/board/${payload.id}`, {
-  //     ...(payload.name !== undefined && { name: payload.name }),
-  //     ...(payload.description !== undefined && {
-  //       description: payload.description,
-  //     }),
-  //   });
-  // },
-
-  // deleteBoard: (id: number) => {
-  //   return api.delete(`/board/${id}`);
-  // },
-
   archiveBoard: (id: number) => {
     return api.post(`/board/archive/${id}`);
   },
 
   unarchiveBoard: (id: number) => {
     return api.post(`/board/unarchive/${id}`);
+  },
+
+  updateBackground: (
+    boardId: number,
+    data: { file?: File; theme?: string },
+  ) => {
+    const formData = new FormData();
+
+    if (data.file) {
+      formData.append("background", data.file);
+    }
+
+    if (data.theme) {
+      formData.append("theme", data.theme);
+    }
+
+    return api.put(`/board/${boardId}/background`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 };

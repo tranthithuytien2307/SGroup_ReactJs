@@ -16,7 +16,6 @@ import CardChecklistSection from "./checklist/ChecklistSection";
 
 import { useLabelStore } from "../../features/label/model/labelStore";
 import { useCardStore } from "../../features/card/model/cardStore";
-import { useChecklistStore } from "../../features/checklist/model/checklistStore";
 
 import type { Card } from "../../entities/card/model/cardType";
 import type { Label } from "../../entities/label/model/labelType";

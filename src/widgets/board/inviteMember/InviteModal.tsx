@@ -166,17 +166,17 @@ const InviteModal: React.FC<InviteModalProps> = ({
 
         <div className="mb-2 font-semibold">
           Thành viên của bảng thông tin{" "}
-          <span className="text-gray-500">{boardMembers.length}</span>
+          <span className="text-gray-500">{workspaceMembers.length}</span>
         </div>
 
         <div className="max-h-52 overflow-y-auto mb-4">
-          {boardMembers.map((member) => (
+          {workspaceMembers.map((member) => (
             <QuickInviteItem
               key={member.id}
-              name={member.user.name}
-              email={member.user.email}
-              avatar={member.user.avatar_url || ""}
-              onInvite={() => onSendInvitation(member.user.email)}
+              name={member.name}
+              email={member.email}
+              avatar={member.avatar_url || ""}
+              onInvite={() => onSendInvitation(member.email)}
             />
           ))}
         </div>

@@ -3,12 +3,21 @@ import { updateCardDate } from "./updateCardDate";
 import { removeDeadlineDate } from "./removeDeadlineDate";
 import type { Card } from "../../../entities/card/model/cardType";
 import { moveCard } from "./moveCard";
+import { deleteCrad } from "./deleteCard";
+import { updateCard } from "./updateCard";
+import { createCard } from "./createCard";
 
 type CardState = {
   cards: Card[];
   loading: boolean;
 
   setCards: (cards: Card[]) => void;
+  addCard: (listId: number, title: string) => Promise<void>;
+  updateCardDetail: (
+    cardId: number,
+    data: { title?: string; description?: string },
+  ) => Promise<void>;
+  deleteCard: (cardId: number) => Promise<void>;
 
   updateCardDates: (
     cardId: number,
@@ -25,11 +34,68 @@ type CardState = {
   ) => Promise<void>;
 };
 
-export const useCardStore = create<CardState>((set) => ({
+export const useCardStore = create<CardState>((set, get) => ({
   cards: [],
   loading: false,
 
   setCards: (cards) => set({ cards }),
+
+  addCard: async (listId, title) => {
+    const tempId = Date.now();
+    const tempCard: Card = {
+      id: tempId,
+      list_id: listId,
+      title,
+      position: 9999,
+      is_archived: false,
+    } as Card;
+
+    set((state) => ({ cards: [...state.cards, tempCard] }));
+
+    try {
+      const newCard = await createCard(listId, title);
+
+      set((state) => ({
+        cards: state.cards.map((c) =>
+          c.id === tempId
+            ? newCard
+              ? newCard
+              : { ...tempCard, id: newCard?.id || tempId }
+            : c,
+        ),
+      }));
+    } catch (error) {
+      set((state) => ({ cards: state.cards.filter((c) => c.id !== tempId) }));
+      throw error;
+    }
+  },
+
+  updateCardDetail: async (cardId, data) => {
+    const previousCards = get().cards;
+    // Cập nhật UI trước
+    set((state) => ({
+      cards: state.cards.map((c) => (c.id === cardId ? { ...c, ...data } : c)),
+    }));
+
+    try {
+      await updateCard(cardId, data);
+    } catch (error) {
+      set({ cards: previousCards }); // Rollback nếu lỗi
+      throw error;
+    }
+  },
+
+  deleteCard: async (cardId) => {
+    const previousCards = get().cards;
+    set((state) => ({ cards: state.cards.filter((c) => c.id !== cardId) }));
+
+    try {
+      await deleteCrad(cardId);
+    } catch (error) {
+      set({ cards: previousCards });
+      throw error;
+    }
+  },
 
   updateCardDates: async (cardId, start_date, due_date) => {
     if (!cardId) return;
@@ -97,8 +163,7 @@ export const useCardStore = create<CardState>((set) => ({
           card.id === cardId
             ? {
                 ...card,
-                list_id: toListId, // Cập nhật ID list mới cho card
-                // Bạn có thể cập nhật thêm board_id nếu card được chuyển sang board khác
+                list_id: toListId,
               }
             : card,
         ),
@@ -107,7 +172,7 @@ export const useCardStore = create<CardState>((set) => ({
     } catch (error) {
       console.error("Failed to move card in store: ", error);
       set({ loading: false });
-      throw error; // Quăng lỗi để UI có thể handle (VD: hoàn tác kéo thả nếu lỗi)
+      throw error;
     }
   },
 }));
