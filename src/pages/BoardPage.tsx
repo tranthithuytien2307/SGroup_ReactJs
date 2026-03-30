@@ -156,7 +156,7 @@ export default function BoardPage() {
     const allCards = lists.flatMap((list) => list.cards || []);
     setCards(allCards);
   }, [lists]);
-  
+
   useEffect(() => {
     const fetchLink = async () => {
       if (!boardId) return;
@@ -354,8 +354,8 @@ export default function BoardPage() {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex flex-1 flex-col h-screen" style={backgroundStyle}>
-        <div className="flex flex-1 flex-col h-screen">
+      <div className="h-screen flex flex-col" style={backgroundStyle}>
+        <div className="flex-shrink-0">
           <BoardHeader
             boardName={board?.name || ""}
             handleInviteUser={() => setIsModalOpen(true)}
@@ -363,13 +363,19 @@ export default function BoardPage() {
             boardMember={boardMember}
             boardId={boardId}
           />
+        </div>
 
+        <div className="flex-1 overflow-hidden">
           <Droppable droppableId="board" direction="horizontal" type="LIST">
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex items-start space-x-4 p-4"
+                className="
+                flex items-start gap-4 p-4
+                h-full
+                overflow-x-auto overflow-y-hidden
+              "
               >
                 {lists.map((list, index) => (
                   <Draggable
@@ -378,7 +384,11 @@ export default function BoardPage() {
                     index={index}
                   >
                     {(provided) => (
-                      <div ref={provided.innerRef} {...provided.draggableProps}>
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className="flex-shrink-0"
+                      >
                         <div {...provided.dragHandleProps}>
                           <BoardList
                             id={list.id}
@@ -398,13 +408,7 @@ export default function BoardPage() {
 
                 {provided.placeholder}
 
-                <div
-                  className="
-              w-72 flex-shrink-0
-              rounded-2xl border border-dashed border-gray-300
-              bg-gray-50 px-4 py-3
-            "
-                >
+                <div className="w-72 flex-shrink-0">
                   {isAdding ? (
                     <AddItemForm
                       value={listTitle}
@@ -418,36 +422,32 @@ export default function BoardPage() {
                     <button
                       onClick={() => setIsAdding(true)}
                       className="
-                  flex w-full items-center gap-2
-                  text-sm font-medium text-gray-500
-                  hover:text-gray-700
-                  transition-colors duration-150
-                "
+                      w-full rounded-2xl border border-dashed border-gray-300
+                      bg-gray-50 px-4 py-3
+                      text-sm text-gray-500 hover:text-gray-700
+                    "
                     >
-                      <Plus className="h-4 w-4" />
-                      Add a list
+                      + Add a list
                     </button>
                   )}
                 </div>
               </div>
             )}
           </Droppable>
-
-          <div onBlur={() => hanldeGetLink()}>
-            {isModalOpen && (
-              <InviteModal
-                boardMembers={boardMember}
-                workspaceMembers={workspaceMembers}
-                shareLink={shareLink}
-                setShareLink={setShareLink}
-                onClose={() => setIsModalOpen(false)}
-                onSendInvitation={handleSendInvitation}
-                onCreateLink={handleCreateLink}
-                onDeleteLink={handleDeleteLink}
-              />
-            )}
-          </div>
         </div>
+
+        {isModalOpen && (
+          <InviteModal
+            boardMembers={boardMember}
+            workspaceMembers={workspaceMembers}
+            shareLink={shareLink}
+            setShareLink={setShareLink}
+            onClose={() => setIsModalOpen(false)}
+            onSendInvitation={handleSendInvitation}
+            onCreateLink={handleCreateLink}
+            onDeleteLink={handleDeleteLink}
+          />
+        )}
       </div>
     </DragDropContext>
   );
