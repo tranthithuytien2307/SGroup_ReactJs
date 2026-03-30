@@ -42,7 +42,9 @@ export default function BoardList({
   const currentCard = cardsFromStore.find((c) => c.id === openCardDetailId);
 
   // Lọc ra các thẻ thuộc danh sách này
-  const cardsInThisList = cardsFromStore.filter((c) => c.list_id === id);
+  const cardsInThisList = cardsFromStore
+    .filter((c) => c.list_id === id)
+    .sort((a, b) => a.position - b.position);
 
   const handleAddCard = () => {
     if (!cardTitle.trim()) return;
@@ -65,7 +67,11 @@ export default function BoardList({
       />
 
       {/* Vùng thả thẻ (Droppable) */}
-      <Droppable droppableId={id.toString()} type="CARD">
+      <Droppable
+        droppableId={id.toString()}
+        type="CARD"
+        key={id + "-" + cardsInThisList.length}
+      >
         {(provided, snapshot) => (
           <div
             {...provided.droppableProps}

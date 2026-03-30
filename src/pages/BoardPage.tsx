@@ -51,47 +51,57 @@ export default function BoardPage() {
   const addCardStore = useCardStore((state) => state.addCard);
   const updateCardStore = useCardStore((state) => state.updateCardDetail);
   const deleteCardStore = useCardStore((state) => state.deleteCard);
+
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
-    if (
-      !destination ||
-      (destination.droppableId === source.droppableId &&
-        destination.index === source.index)
-    ) {
-      return;
-    }
+    if (!destination) return;
 
     const cardId = parseInt(draggableId);
     const toListId = parseInt(destination.droppableId);
-    const newIndex = destination.index;
+    const fromListId = parseInt(source.droppableId);
 
     const oldCards = [...cards];
-    const newCards = Array.from(cards);
+    const newCards = [...cards];
 
-    const movedCardIndex = newCards.findIndex((c) => c.id === cardId);
-    if (movedCardIndex !== -1) {
-      const [movedCard] = newCards.splice(movedCardIndex, 1);
-      movedCard.list_id = toListId;
+    const movedIndex = newCards.findIndex((c) => c.id === cardId);
+    if (movedIndex === -1) return;
 
-      const otherCards = newCards.filter((c) => c.list_id !== toListId);
-      const targetListCards = newCards.filter((c) => c.list_id === toListId);
-      targetListCards.splice(newIndex, 0, movedCard);
+    const [movedCard] = newCards.splice(movedIndex, 1);
 
-      setCards([...otherCards, ...targetListCards]);
+    movedCard.list_id = toListId;
+
+    const targetCards = newCards.filter((c) => c.list_id === toListId);
+
+    targetCards.splice(destination.index, 0, movedCard);
+
+    targetCards.forEach((c, index) => {
+      c.position = (index + 1) * 100;
+    });
+
+    const updatedCards = newCards.map((c) => {
+      if (c.list_id === toListId) {
+        return targetCards.find((t) => t.id === c.id) || c;
+      }
+      return c;
+    });
+
+    if (!updatedCards.find((c) => c.id === movedCard.id)) {
+      updatedCards.push(movedCard);
     }
+
+    setCards(updatedCards);
 
     try {
-      const boardId = board?.id;
-      if (boardId) {
-        await moveCardStore(cardId, boardId, toListId, newIndex);
+      if (board?.id) {
+        await moveCardStore(cardId, board.id, toListId, destination.index);
       }
     } catch (error) {
-      console.error("API Error, rolling back to original state");
+      console.error("Rollback");
       setCards(oldCards);
-      alert("Không thể di chuyển thẻ, vui lòng thử lại!");
     }
   };
+
   const currentBoard = useBoardStore((state) => state.currentBoard);
   const setCurrentBoard = useBoardStore((state) => state.setCurrentBoard);
 

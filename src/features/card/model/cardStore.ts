@@ -6,6 +6,7 @@ import { moveCard } from "./moveCard";
 import { deleteCrad } from "./deleteCard";
 import { updateCard } from "./updateCard";
 import { createCard } from "./createCard";
+import { boardAPI } from "../../../entities/board/api/boardAPI";
 
 type CardState = {
   cards: Card[];
@@ -148,27 +149,16 @@ export const useCardStore = create<CardState>((set, get) => ({
       set({ loading: false });
     }
   },
+
   moveCard: async (cardId, toBoardId, toListId, newIndex) => {
     if (!cardId) return;
 
     try {
       set({ loading: true });
 
-      // Gọi API moveCard
       await moveCard(cardId, toBoardId, toListId, newIndex);
 
-      // Cập nhật State cục bộ
-      set((state) => ({
-        cards: state.cards.map((card) =>
-          card.id === cardId
-            ? {
-                ...card,
-                list_id: toListId,
-              }
-            : card,
-        ),
-        loading: false,
-      }));
+      set({ loading: false });
     } catch (error) {
       console.error("Failed to move card in store: ", error);
       set({ loading: false });
