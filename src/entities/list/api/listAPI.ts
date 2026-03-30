@@ -33,4 +33,11 @@ export const listAPI = {
   deleteList: (listId: number) => {
     return api.delete(`/list/${listId}`);
   },
+
+  moveList: (listId: number, newBoardId: number, newIndex: number) => {
+    return api.patch(`/list/${listId}/move`, {
+      newBoardId,
+      newIndex,
+    });
+  },
 };

@@ -28,14 +28,19 @@ import type {
 } from "../entities/users/type/types";
 import { getWorkspaceMembers } from "../features/workspace/model/getWorkspaceMembers";
 import { useCardStore } from "../features/card/model/cardStore";
-import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  type DropResult,
+} from "@hello-pangea/dnd";
 import { useBoardStore } from "../features/board/model/boardStore";
+import { useListStore } from "../features/list/model/listStore";
 
 export default function BoardPage() {
   const { id } = useParams();
   const boardId = Number(id);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [lists, setLists] = useState<List[]>([]);
   const [board, setBoard] = useState<Board | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -51,15 +56,45 @@ export default function BoardPage() {
   const addCardStore = useCardStore((state) => state.addCard);
   const updateCardStore = useCardStore((state) => state.updateCardDetail);
   const deleteCardStore = useCardStore((state) => state.deleteCard);
+  const lists = useListStore((state) => state.lists);
+  const setLists = useListStore((state) => state.setLists);
+  const moveListStore = useListStore((state) => state.moveList);
 
   const onDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+    const { destination, source, draggableId, type } = result;
 
     if (!destination) return;
 
+    if (type === "LIST") {
+      const listId = parseInt(draggableId);
+
+      const oldLists = [...lists];
+      const newLists = [...lists];
+
+      const [movedList] = newLists.splice(source.index, 1);
+      newLists.splice(destination.index, 0, movedList);
+
+      const updatedLists = newLists.map((l, index) => ({
+        ...l,
+        position: (index + 1) * 100,
+      }));
+
+      setLists(updatedLists);
+
+      try {
+        if (board?.id) {
+          await moveListStore(listId, board.id, destination.index);
+        }
+      } catch (error) {
+        console.error("Rollback LIST");
+        setLists(oldLists);
+      }
+
+      return;
+    }
+
     const cardId = parseInt(draggableId);
     const toListId = parseInt(destination.droppableId);
-    const fromListId = parseInt(source.droppableId);
 
     const oldCards = [...cards];
     const newCards = [...cards];
@@ -97,7 +132,7 @@ export default function BoardPage() {
         await moveCardStore(cardId, board.id, toListId, destination.index);
       }
     } catch (error) {
-      console.error("Rollback");
+      console.error("Rollback CARD");
       setCards(oldCards);
     }
   };
@@ -121,7 +156,7 @@ export default function BoardPage() {
     const allCards = lists.flatMap((list) => list.cards || []);
     setCards(allCards);
   }, [lists]);
-
+  
   useEffect(() => {
     const fetchLink = async () => {
       if (!boardId) return;
@@ -178,15 +213,18 @@ export default function BoardPage() {
   }, [isModalOpen, boardId, board?.invite_enabled]);
 
   const onrenameList = async (listId: number, newTitle: string) => {
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === listId ? { ...list, name: newTitle } : list,
-      ),
+    const prevLists = lists;
+
+    const updated = prevLists.map((list) =>
+      list.id === listId ? { ...list, name: newTitle } : list,
     );
+
+    setLists(updated);
+
     try {
       await renameList(listId, newTitle);
     } catch (error) {
-      setLists(lists);
+      setLists(prevLists);
       console.error("Failed to rename list: ", error);
     }
   };
@@ -244,25 +282,27 @@ export default function BoardPage() {
   const onAddList = async (boardId: number, name: string) => {
     if (!name.trim()) return;
 
+    const prevLists = lists;
+
     const tempList: List = {
       id: Date.now(),
       board_id: boardId,
       name,
-      position: lists.length + 1,
+      position: prevLists.length + 1,
       cover_url: null,
       is_archived: false,
       archived_at: null,
       cards: [],
     };
 
-    setLists((prev) => [...prev, tempList]);
+    setLists([...prevLists, tempList]);
 
     try {
       await createList(boardId, name);
       const listData = await getListByBoardId(boardId);
       setLists(listData);
     } catch (error) {
-      setLists((prev) => prev.filter((l) => l.id !== tempList.id));
+      setLists(prevLists);
       console.error("Failed to add list:", error);
     }
   };
@@ -297,12 +337,18 @@ export default function BoardPage() {
 
   const onDeleteList = async (listId: number) => {
     if (!listId) return;
-    setLists((prev) => prev.filter((list) => list.id !== listId));
+
+    const prevLists = lists;
+
+    const updated = prevLists.filter((list) => list.id !== listId);
+
+    setLists(updated);
+
     try {
       await deleteList(listId);
     } catch (error) {
+      setLists(prevLists);
       console.error("Failed to delete list: ", error);
-      setLists(lists);
     }
   };
 
@@ -318,56 +364,74 @@ export default function BoardPage() {
             boardId={boardId}
           />
 
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex items-start space-x-4 p-4">
-              {lists &&
-                lists.map((list) => (
-                  <BoardList
+          <Droppable droppableId="board" direction="horizontal" type="LIST">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex items-start space-x-4 p-4"
+              >
+                {lists.map((list, index) => (
+                  <Draggable
                     key={list.id}
-                    id={list.id}
-                    title={list.name}
-                    cards={Array.isArray(list.cards) ? list.cards : []}
-                    onRename={onrenameList}
-                    onAddCard={onAddCard}
-                    onDeleteList={onDeleteList}
-                    onUpdateCard={onUpdateCard}
-                    onDeleteCard={onDeleteCard}
-                  />
+                    draggableId={list.id.toString()}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <div ref={provided.innerRef} {...provided.draggableProps}>
+                        <div {...provided.dragHandleProps}>
+                          <BoardList
+                            id={list.id}
+                            title={list.name}
+                            cards={Array.isArray(list.cards) ? list.cards : []}
+                            onRename={onrenameList}
+                            onAddCard={onAddCard}
+                            onDeleteList={onDeleteList}
+                            onUpdateCard={onUpdateCard}
+                            onDeleteCard={onDeleteCard}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
                 ))}
 
-              <div
-                className="
+                {provided.placeholder}
+
+                <div
+                  className="
               w-72 flex-shrink-0
               rounded-2xl border border-dashed border-gray-300
               bg-gray-50 px-4 py-3
             "
-              >
-                {isAdding ? (
-                  <AddItemForm
-                    value={listTitle}
-                    placeholder="Enter list title..."
-                    submitLabel="Add List"
-                    onChange={setListTitle}
-                    onSubmit={handleAddList}
-                    onCancel={handleCancel}
-                  />
-                ) : (
-                  <button
-                    onClick={() => setIsAdding(true)}
-                    className="
+                >
+                  {isAdding ? (
+                    <AddItemForm
+                      value={listTitle}
+                      placeholder="Enter list title..."
+                      submitLabel="Add List"
+                      onChange={setListTitle}
+                      onSubmit={handleAddList}
+                      onCancel={handleCancel}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setIsAdding(true)}
+                      className="
                   flex w-full items-center gap-2
                   text-sm font-medium text-gray-500
                   hover:text-gray-700
                   transition-colors duration-150
                 "
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add a list
-                  </button>
-                )}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add a list
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </Droppable>
 
           <div onBlur={() => hanldeGetLink()}>
             {isModalOpen && (

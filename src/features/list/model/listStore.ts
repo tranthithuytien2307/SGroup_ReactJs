@@ -1,5 +1,4 @@
 import { create } from "zustand";
-// import { moveList as moveListAPI } from "./moveList";
 import { listAPI } from "../../../entities/list/api/listAPI"; // Giả định đường dẫn API của bạn
 import type { List } from "../../../entities/list/model/listType";
 
@@ -7,11 +6,11 @@ type ListState = {
   lists: List[];
   loading: boolean;
   setLists: (lists: List[]) => void;
-  // moveList: (
-  //   listId: number,
-  //   toBoardId: number,
-  //   newIndex: number,
-  // ) => Promise<void>;
+  moveList: (
+    listId: number,
+    toBoardId: number,
+    newIndex: number,
+  ) => Promise<void>;
   renameList: (listId: number, newTitle: string) => Promise<void>;
   addList: (boardId: number, name: string) => Promise<void>;
   deleteList: (listId: number) => Promise<void>;
@@ -31,37 +30,34 @@ export const useListStore = create<ListState>((set, get) => ({
 
     set({ lists: sortedLists });
   },
+  moveList: async (listId, toBoardId, newIndex) => {
+    const previousLists = get().lists;
+    const newLists = [...previousLists];
 
-  // 1. MOVE LIST (Đã sửa từ trước)
-  // moveList: async (listId, toBoardId, newIndex) => {
-  //   const previousLists = get().lists;
-  //   const newLists = [...previousLists];
-  //   const listIndex = newLists.findIndex((l) => l.id === listId);
-  //   if (listIndex === -1) return;
+    const oldIndex = newLists.findIndex((l) => l.id === listId);
+    if (oldIndex === -1) return;
 
-  //   const [movedList] = newLists.splice(listIndex, 1);
-  //   newLists.splice(newIndex, 0, movedList);
-  //   set({ lists: newLists });
+    const [movedList] = newLists.splice(oldIndex, 1);
+    newLists.splice(newIndex, 0, movedList);
 
-  //   try {
-  //     await moveListAPI(listId, toBoardId, newIndex);
-  //     // Sau khi move thành công, fetch lại lists để cập nhật chính xác
-  //     const response = await listAPI.getListsByBoardId(toBoardId);
-  //     set((state) => ({
-  //       lists: response.data.responseObject.sort(
-  //         (a, b) => a.position - b.position,
-  //       ),
-  //     }));
-  //   } catch (error) {
-  //     set({ lists: previousLists });
-  //     console.error("Failed to move list:", error);
-  //   }
-  // },
+    const updatedLists = newLists.map((l, index) => ({
+      ...l,
+      position: (index + 1) * 100,
+    }));
 
-  // 2. RENAME LIST
+    set({ lists: updatedLists });
+
+    try {
+      await listAPI.moveList(listId, toBoardId, newIndex);
+    } catch (error) {
+      set({ lists: previousLists });
+      console.error("Failed to move list:", error);
+    }
+  },
+
   renameList: async (listId, newTitle) => {
     const previousLists = get().lists;
-    // Cập nhật UI ngay lập tức
+
     set({
       lists: previousLists.map((l) =>
         l.id === listId ? { ...l, name: newTitle } : l,
@@ -71,16 +67,15 @@ export const useListStore = create<ListState>((set, get) => ({
     try {
       await listAPI.updateList({ id: listId, name: newTitle });
     } catch (error) {
-      set({ lists: previousLists }); // Rollback nếu lỗi
+      set({ lists: previousLists }); 
       console.error("Failed to rename list:", error);
     }
   },
 
-  // 3. ADD LIST
   addList: async (boardId, name) => {
     const previousLists = get().lists;
     const tempList: List = {
-      id: Date.now(), // ID tạm thời
+      id: Date.now(), 
       board_id: boardId,
       name,
       position: previousLists.length + 1,
@@ -94,10 +89,13 @@ export const useListStore = create<ListState>((set, get) => ({
 
     try {
       await listAPI.createList(boardId, name);
-      // Sau khi thêm thành công, nên fetch lại hoặc cập nhật ID thật từ server
+      
       const response = await listAPI.getListsByBoardId(boardId);
-      const freshLists = response.data.responseObject;
-      set({ lists: freshLists.sort((a, b) => a.position - b.position) });
+      const freshLists: List[] = response.data.responseObject;
+
+      set({
+        lists: freshLists.sort((a, b) => a.position - b.position),
+      });
     } catch (error) {
       set({ lists: previousLists });
       console.error("Failed to add list:", error);
