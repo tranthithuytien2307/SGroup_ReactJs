@@ -1,3 +1,11 @@
+import type { ChecklistType } from "../../checklist/model/checklistType";
+import type { User } from "../../users/type/types";
+
+export type CardMember = {
+  card_id: number;
+  user_id: number;
+};
+
 export type Card = {
   id: number;
   list_id: number;
@@ -12,4 +20,7 @@ export type Card = {
   cover_color: string | null;
   cover_image_url: string | null;
   cover_url: string | null;
+
+  members?: User[];
+  checklists?: ChecklistType[];
 };

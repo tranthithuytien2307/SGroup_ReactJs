@@ -6,14 +6,16 @@ import { getChecklistDetail } from "./getChecklistDetail";
 import { updateChecklistTitle } from "./updateChecklistTitle";
 import { deleteChecklist as deleteChecklistService } from "./deleteChecklist";
 import { useChecklistItemStore } from "../../checklistItem/model/checklistItemStore";
+import { getChecklistByCardId } from "./getChecklistByCardId";
 
 type ChecklistState = {
-  checklists: ChecklistType[]; // all checklists
+  checklists: ChecklistType[];
   checklistsByCardId: Record<number, ChecklistType[]>;
   loading: boolean;
 
   createChecklist: (cardId: number, title: string) => Promise<void>;
   fetchAllChecklists: () => Promise<void>;
+  fetchChecklistsByCardId: (cardId: number) => Promise<void>;
   fetchChecklistDetail: (id: number) => Promise<ChecklistType | void>;
   updateChecklistTitle: (
     id: number,
@@ -21,6 +23,8 @@ type ChecklistState = {
     title: string,
   ) => Promise<void>;
   deleteChecklist: (id: number, cardId: number) => Promise<void>;
+
+  getChecklistByCardId: (cardId: number) => ChecklistType[] | undefined;
 };
 
 export const useChecklistStore = create<ChecklistState>((set, get) => ({
@@ -30,140 +34,162 @@ export const useChecklistStore = create<ChecklistState>((set, get) => ({
 
   createChecklist: async (cardId, title) => {
     if (!cardId || !title) return;
+
     try {
-      set({ loading: true });
       const newChecklist = await createChecklist(cardId, title);
-      if (newChecklist) {
-        set((state) => ({
-          checklists: [...state.checklists, newChecklist],
-          checklistsByCardId: {
-            ...state.checklistsByCardId,
-            [cardId]: [
-              ...(state.checklistsByCardId[cardId] || []),
-              newChecklist,
-            ],
-          },
-          loading: false,
-        }));
-      }
+      if (!newChecklist) return;
+
+      set((state) => ({
+        checklists: [...state.checklists, newChecklist],
+        checklistsByCardId: {
+          ...state.checklistsByCardId,
+          [cardId]: [...(state.checklistsByCardId[cardId] || []), newChecklist],
+        },
+      }));
     } catch (error) {
       console.error("Failed to create checklist:", error);
-      set({ loading: false });
     }
   },
 
-  // fetchAllChecklists: async () => {
-  //   try {
-  //     set({ loading: true });
-  //     const data: ChecklistType[] = await getAllChecklists(); // <--- gán kiểu
-  //     if (data) {
-  //       const byCardId: Record<number, ChecklistType[]> = {};
-  //       data.forEach((ch: ChecklistType) => {
-  //         // <--- gán kiểu cho ch
-  //         if (!byCardId[ch.card_id]) byCardId[ch.card_id] = [];
-  //         byCardId[ch.card_id].push(ch);
-  //       });
-
-  //       set({
-  //         checklists: data,
-  //         checklistsByCardId: byCardId,
-  //         loading: false,
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to fetch all checklists:", error);
-  //     set({ loading: false });
-  //   }
-  // },
   fetchAllChecklists: async () => {
     try {
       set({ loading: true });
-      const data = await getAllChecklists(); // API trả về responseObject như bạn đã đưa
 
-      if (data) {
-        const byCardId: Record<number, any[]> = {};
+      const data = await getAllChecklists();
+      if (!data) return;
 
-        // Lấy hàm setInitialItems từ Store Item để dùng
-        const setInitialItems =
-          useChecklistItemStore.getState().setInitialItems;
+      const byCardId: Record<number, ChecklistType[]> = {};
 
-        data.forEach((ch: any) => {
-          // 1. Phân loại checklist theo card_id (Logic cũ của bạn)
-          if (!byCardId[ch.card_id]) byCardId[ch.card_id] = [];
-          byCardId[ch.card_id].push(ch);
+      const setInitialItems = useChecklistItemStore.getState().setInitialItems;
 
-          // 2. Nếu checklist này có items, đẩy ngay vào ChecklistItemStore (Logic mới)
-          if (ch.items && ch.items.length > 0) {
-            setInitialItems(ch.id, ch.items);
-          }
-        });
+      data.forEach((ch: any) => {
+        if (!byCardId[ch.card_id]) byCardId[ch.card_id] = [];
+        byCardId[ch.card_id].push(ch);
 
-        set({
-          checklists: data,
-          checklistsByCardId: byCardId,
-          loading: false,
-        });
-      }
+        if (ch.items?.length) {
+          setInitialItems(ch.id, ch.items);
+        }
+      });
+
+      set({
+        checklists: data,
+        checklistsByCardId: byCardId,
+        loading: false,
+      });
     } catch (error) {
       console.error("Failed to fetch all checklists:", error);
       set({ loading: false });
     }
   },
 
+  fetchChecklistsByCardId: async (cardId) => {
+    try {
+      const data = await getChecklistByCardId(cardId);
+      console.log("API DATA:", data);
+      if (!data) return;
+
+      const checklistItemStore = useChecklistItemStore.getState();
+      const setInitialItems = checklistItemStore.setInitialItems;
+
+      const newProgress: Record<number, number> = {};
+
+      data.forEach((ch: any) => {
+        if (ch.items?.length) {
+          setInitialItems(ch.id, ch.items);
+
+          // ✅ TÍNH PROGRESS NGAY TẠI ĐÂY
+          const total = ch.items.length;
+          const done = ch.items.filter((i: any) => i.is_completed).length;
+
+          newProgress[ch.id] = Math.round((done / total) * 100);
+        } else {
+          newProgress[ch.id] = 0;
+        }
+      });
+
+      // ✅ set progress vào store
+      useChecklistItemStore.setState((state) => ({
+        progressByChecklistId: {
+          ...state.progressByChecklistId,
+          ...newProgress,
+        },
+      }));
+
+      set((state) => ({
+        checklistsByCardId: {
+          ...state.checklistsByCardId,
+          [cardId]: data,
+        },
+      }));
+    } catch (e) {
+      console.error("Fetch checklist by card failed:", e);
+    }
+  },
+
+  getChecklistByCardId: (cardId) => {
+    return get().checklistsByCardId[cardId];
+  },
+
   fetchChecklistDetail: async (id) => {
     if (!id) return;
+
     try {
       set({ loading: true });
       const checklist = await getChecklistDetail(id);
       set({ loading: false });
       return checklist;
     } catch (error) {
-      console.error(`Failed to fetch checklist detail for id ${id}:`, error);
+      console.error(`Failed to fetch checklist detail ${id}`, error);
       set({ loading: false });
     }
   },
 
-  // Trong ChecklistStore.ts
   updateChecklistTitle: async (id, cardId, title) => {
     if (!id || !title) return;
+
     try {
-      // Tắt loading tạm thời để tránh giật lag UI khi gõ
       const updatedChecklist = await updateChecklistTitle(id, title);
+      if (!updatedChecklist) return;
 
-      if (updatedChecklist) {
-        set((state) => {
-          // Log để kiểm tra xem updatedChecklist có title không
-          console.log("Updated from BE:", updatedChecklist);
-
-          const newChecklists = state.checklists.map(
-            (c) => (c.id === id ? { ...c, ...updatedChecklist } : c), // Dùng spread để giữ lại data cũ
-          );
-
-          const newByCardId = {
-            ...state.checklistsByCardId,
-            [cardId]: (state.checklistsByCardId[cardId] || []).map((c) =>
-              c.id === id ? { ...c, ...updatedChecklist } : c,
-            ),
-          };
-
-          return {
-            checklists: newChecklists,
-            checklistsByCardId: newByCardId,
-            loading: false,
-          };
-        });
-      }
+      set((state) => ({
+        checklists: state.checklists.map((c) =>
+          c.id === id ? { ...c, ...updatedChecklist } : c,
+        ),
+        checklistsByCardId: {
+          ...state.checklistsByCardId,
+          [cardId]: (state.checklistsByCardId[cardId] || []).map((c) =>
+            c.id === id ? { ...c, ...updatedChecklist } : c,
+          ),
+        },
+      }));
     } catch (error) {
-      console.error("Update failed:", error);
-      set({ loading: false });
+      console.error("Update checklist failed:", error);
     }
   },
 
   deleteChecklist: async (id, cardId) => {
     if (!id) return;
+
     try {
-      set({ loading: true });
       await deleteChecklistService(id);
+
+      const checklistItemStore = useChecklistItemStore.getState();
+
+      const newProgress = {
+        ...checklistItemStore.progressByChecklistId,
+      };
+      delete newProgress[id];
+
+      const newItems = {
+        ...checklistItemStore.itemsByChecklistId,
+      };
+      delete newItems[id];
+
+      useChecklistItemStore.setState({
+        progressByChecklistId: newProgress,
+        itemsByChecklistId: newItems,
+      });
+
       set((state) => ({
         checklists: state.checklists.filter((c) => c.id !== id),
         checklistsByCardId: {
@@ -172,11 +198,9 @@ export const useChecklistStore = create<ChecklistState>((set, get) => ({
             (c) => c.id !== id,
           ),
         },
-        loading: false,
       }));
     } catch (error) {
-      console.error(`Failed to delete checklist with id ${id}:`, error);
-      set({ loading: false });
+      console.error("Delete checklist failed:", error);
     }
   },
 }));

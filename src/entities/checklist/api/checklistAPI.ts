@@ -20,4 +20,8 @@ export const checklistAPI = {
   deleteChecklist: async (id: number) => {
     return await api.delete(`/checklist/${id}`);
   },
+
+  getChecklikstByCardId: async (cardId: number) => {
+    return await api.get(`/checklist/${cardId}/by-card`);
+  },
 };

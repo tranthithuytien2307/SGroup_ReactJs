@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Droppable } from "@hello-pangea/dnd";
 
@@ -11,6 +11,7 @@ import { useCardStore } from "../../features/card/model/cardStore";
 import type { Card } from "../../entities/card/model/cardType";
 
 type BoardListProps = {
+  boardId: number;
   id: number;
   title: string;
   cards: Card[];
@@ -25,6 +26,7 @@ type BoardListProps = {
 };
 
 export default function BoardList({
+  boardId,
   id,
   title,
   onRename,
@@ -37,11 +39,9 @@ export default function BoardList({
   const [cardTitle, setCardTitle] = useState("");
   const [openCardDetailId, setOpenCardDetailId] = useState<number | null>(null);
 
-  // Lấy dữ liệu từ Store để đảm bảo UI đồng bộ sau khi Drag & Drop
   const cardsFromStore = useCardStore((state) => state.cards);
   const currentCard = cardsFromStore.find((c) => c.id === openCardDetailId);
 
-  // Lọc ra các thẻ thuộc danh sách này
   const cardsInThisList = cardsFromStore
     .filter((c) => c.list_id === id)
     .sort((a, b) => a.position - b.position);
@@ -130,7 +130,7 @@ export default function BoardList({
           listTitle={title}
           onUpdateCard={onUpdateCard}
           onDeleteCard={onDeleteCard}
-          boardId={id}
+          boardId={boardId}
         />
       )}
     </div>

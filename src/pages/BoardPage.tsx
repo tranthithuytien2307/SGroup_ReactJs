@@ -391,6 +391,7 @@ export default function BoardPage() {
                       >
                         <div {...provided.dragHandleProps}>
                           <BoardList
+                            boardId={boardId}
                             id={list.id}
                             title={list.name}
                             cards={Array.isArray(list.cards) ? list.cards : []}

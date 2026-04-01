@@ -20,6 +20,8 @@ import { useCardStore } from "../../features/card/model/cardStore";
 import type { Card } from "../../entities/card/model/cardType";
 import type { Label } from "../../entities/label/model/labelType";
 import CardDetailTitle from "./cardDetail/CardDetailTitle";
+import MemberSelectorPopup from "./cardDetail/MemberSelectorPopup";
+import { useBoardStore } from "../../features/board/model/boardStore";
 
 export default function CardDetailModal({
   card,
@@ -48,6 +50,7 @@ export default function CardDetailModal({
   const [openEditLabel, setOpenEditLabel] = useState(false);
   const [editingLabel, setEditingLabel] = useState<Label | null>(null);
   const [openChecklistPopup, setOpenChecklistPopup] = useState(false);
+  const [openMemberPopup, setOpenMemberPopup] = useState(false);
 
   const createLabel = useLabelStore((s) => s.createLabel);
   const getLabelsByCardId = useLabelStore((s) => s.getLabelsByCardId);
@@ -57,12 +60,21 @@ export default function CardDetailModal({
 
   const currentCard =
     useCardStore((state) => state.cards.find((c) => c.id === card.id)) || card;
+  const addMember = useCardStore((s) => s.addMember);
+  const boardMembers = useBoardStore((s) => s.boardMembers);
+  const getBoardMembers = useBoardStore((s) => s.getBoardMembers);
 
   const labels = useLabelStore((state) => state.labelsByCardId[card.id] || []);
   useEffect(() => {
     getLabelsByBoardId(boardId);
     getLabelsByCardId(card.id);
   }, [boardId, card.id]);
+
+  useEffect(() => {
+    if (boardId) {
+      getBoardMembers(boardId);
+    }
+  }, [boardId]);
 
   const closeAllPopups = () => {
     setOpenAddPopup(false);
@@ -251,9 +263,28 @@ export default function CardDetailModal({
                 <CheckSquare size={16} /> Việc cần làm
               </button>
 
-              <button className="btn flex items-center gap-2">
-                <Users size={16} /> Thành viên
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    closeAllPopups();
+                    setOpenMemberPopup(true);
+                  }}
+                  className="btn flex items-center gap-2"
+                >
+                  <Users size={16} /> Thành viên
+                </button>
+
+                {openMemberPopup && (
+                  <MemberSelectorPopup
+                    members={boardMembers}
+                    onClose={() => setOpenMemberPopup(false)}
+                    onSelect={(userId) => {
+                      addMember(currentCard.id, userId);
+                      setOpenMemberPopup(false);
+                    }}
+                  />
+                )}
+              </div>
 
               <button className="btn flex items-center gap-2">
                 <Paperclip size={16} /> Đính kèm
@@ -277,7 +308,7 @@ export default function CardDetailModal({
               />
             </div>
 
-            <CardMembersSection />
+            <CardMembersSection cardId={currentCard.id} />
             <CardDescriptionSection
               cardId={currentCard.id}
               initialDescription={currentCard.description || ""}
@@ -297,7 +328,7 @@ export default function CardDetailModal({
             </div>
             {/* Chỉ vùng này cuộn */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-              <CardCommentsSection />
+              <CardCommentsSection cardId={currentCard.id} />
             </div>
           </div>
         </div>

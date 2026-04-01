@@ -38,4 +38,27 @@ export const cardAPI = {
   ) => {
     return api.patch(`/card/${id}/move`, { toBoardId, toListId, newIndex });
   },
+  addMember: (cardId: number, userId: number) => {
+    return api.post(`/card/${cardId}/member`, {
+      userId,
+    });
+  },
+  removeMember: (cardId: number, userId: number) => {
+    return api.delete(`/card/${cardId}/member/${userId}`);
+  },
+  getCardMembers: (cardId: number) => {
+    return api.get(`/card/${cardId}/members`);
+  },
+  commentCard: (cardId: number, content: string) => {
+    return api.post(`/card/${cardId}/comment`, { content });
+  },
+  updateComment: (commentId: number, content: string) => {
+    return api.put(`/card/comment/${commentId}`, { content });
+  },
+  deleteComment: (commentId: number) => {
+    return api.delete(`/card/comment/${commentId}`);
+  },
+  getCommentByCardId: (cardId: number) => {
+    return api.get(`/card/${cardId}/comment`);
+  },
 };

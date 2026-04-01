@@ -7,10 +7,21 @@ import { deleteCrad } from "./deleteCard";
 import { updateCard } from "./updateCard";
 import { createCard } from "./createCard";
 import { boardAPI } from "../../../entities/board/api/boardAPI";
+import { addMemberToCard } from "./addMemberToCard";
+import { removeMemberFromCard } from "./removeMemberFromCard";
+import { getCardMembers } from "./getCardMembers";
+import { useBoardStore } from "../../board/model/boardStore";
+import { deleteComment } from "./comment/deleteComment";
+import { updateComment } from "./comment/updateComment";
+import { createCommentCard } from "./comment/createCommentCard";
+import { getCommentByCardId } from "./comment/getCommentByCardId";
 
 type CardState = {
   cards: Card[];
   loading: boolean;
+  commentsByCardId: Record<number, any[]>;
+
+  getMembers: (cardId: number) => Promise<void>;
 
   setCards: (cards: Card[]) => void;
   addCard: (listId: number, title: string) => Promise<void>;
@@ -33,13 +44,40 @@ type CardState = {
     toListId: number,
     newIndex: number,
   ) => Promise<void>;
+  addMember: (cardId: number, userId: number) => Promise<void>;
+  removeMember: (cardId: number, userId: number) => Promise<void>;
+
+  getComments: (cardId: number) => Promise<void>;
+  addComment: (cardId: number, content: string) => Promise<void>;
+  updateComment: (commentId: number, content: string) => Promise<void>;
+  deleteComment: (cardId: number, commentId: number) => Promise<void>;
 };
 
 export const useCardStore = create<CardState>((set, get) => ({
   cards: [],
   loading: false,
+  commentsByCardId: {},
 
   setCards: (cards) => set({ cards }),
+
+  getMembers: async (cardId) => {
+    try {
+      const users = await getCardMembers(cardId);
+
+      set((state) => ({
+        cards: state.cards.map((card) =>
+          card.id === cardId
+            ? {
+                ...card,
+                members: users,
+              }
+            : card,
+        ),
+      }));
+    } catch (error) {
+      console.error("Failed to get members", error);
+    }
+  },
 
   addCard: async (listId, title) => {
     const tempId = Date.now();
@@ -162,6 +200,154 @@ export const useCardStore = create<CardState>((set, get) => ({
     } catch (error) {
       console.error("Failed to move card in store: ", error);
       set({ loading: false });
+      throw error;
+    }
+  },
+
+  addMember: async (cardId, userId) => {
+    const previousCards = get().cards;
+    const boardMembers = useBoardStore.getState().boardMembers;
+
+    const foundUser = boardMembers.find((m) => m.user.id === userId)?.user;
+
+    if (!foundUser) return;
+
+    set((state) => ({
+      cards: state.cards.map((card) =>
+        card.id === cardId
+          ? {
+              ...card,
+              members: card.members
+                ? [...card.members, foundUser]
+                : foundUser
+                  ? [foundUser]
+                  : [],
+            }
+          : card,
+      ),
+    }));
+
+    try {
+      await addMemberToCard(cardId, userId);
+    } catch (error) {
+      set({ cards: previousCards });
+      throw error;
+    }
+  },
+
+  removeMember: async (cardId, userId) => {
+    const previousCards = get().cards;
+
+    set((state) => ({
+      cards: state.cards.map((card) =>
+        card.id === cardId
+          ? {
+              ...card,
+              members: card.members?.filter((u) => u.id !== userId),
+            }
+          : card,
+      ),
+    }));
+
+    try {
+      await removeMemberFromCard(cardId, userId);
+    } catch (error) {
+      set({ cards: previousCards });
+      throw error;
+    }
+  },
+  getComments: async (cardId) => {
+    try {
+      const data = await getCommentByCardId(cardId);
+
+      set((state) => ({
+        commentsByCardId: {
+          ...state.commentsByCardId,
+          [cardId]: data || [],
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to get comments", error);
+    }
+  },
+  addComment: async (cardId, content) => {
+    const tempId = Date.now();
+
+    const tempComment = {
+      id: tempId,
+      card_id: cardId,
+      content,
+      user: { name: "You" }, // optional
+      created_at: new Date().toISOString(),
+    };
+
+    set((state) => ({
+      commentsByCardId: {
+        ...state.commentsByCardId,
+        [cardId]: [...(state.commentsByCardId[cardId] || []), tempComment],
+      },
+    }));
+
+    try {
+      const newComment = await createCommentCard(cardId, content);
+
+      set((state) => ({
+        commentsByCardId: {
+          ...state.commentsByCardId,
+          [cardId]: state.commentsByCardId[cardId].map((c) =>
+            c.id === tempId ? newComment : c,
+          ),
+        },
+      }));
+    } catch (error) {
+      // rollback
+      set((state) => ({
+        commentsByCardId: {
+          ...state.commentsByCardId,
+          [cardId]: state.commentsByCardId[cardId].filter(
+            (c) => c.id !== tempId,
+          ),
+        },
+      }));
+      throw error;
+    }
+  },
+  updateComment: async (commentId, content) => {
+    const previous = get().commentsByCardId;
+
+    // update UI trước
+    set((state) => ({
+      commentsByCardId: Object.fromEntries(
+        Object.entries(state.commentsByCardId).map(([cardId, comments]) => [
+          cardId,
+          comments.map((c) => (c.id === commentId ? { ...c, content } : c)),
+        ]),
+      ),
+    }));
+
+    try {
+      await updateComment(commentId, content);
+    } catch (error) {
+      set({ commentsByCardId: previous }); // rollback
+      throw error;
+    }
+  },
+  deleteComment: async (cardId, commentId) => {
+    const previous = get().commentsByCardId;
+
+    set((state) => ({
+      commentsByCardId: {
+        ...state.commentsByCardId,
+        [cardId]: state.commentsByCardId[cardId]?.filter(
+          (c) => c.id !== commentId,
+        ),
+      },
+    }));
+
+    try {
+      await deleteComment(commentId);
+    } catch (error) {
+      set({ commentsByCardId: previous }); // rollback
       throw error;
     }
   },

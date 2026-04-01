@@ -4,12 +4,17 @@ import {
   updateBoardTheme,
 } from "./updateBoardBackground";
 import type { Board } from "../../../entities/board/model/boardType";
+import type { BoardMember } from "../../../entities/users/type/types";
+import { getBoardMember } from "./getBoardMember";
 
 type BoardState = {
   currentBoard: Board | null;
   loading: boolean;
+  boardMembers: BoardMember[];
 
   setCurrentBoard: (board: Board) => void;
+
+  getBoardMembers: (boardId: number) => Promise<void>;
 
   updateBackgroundFile: (boardId: number, file: File) => Promise<void>;
 
@@ -21,8 +26,27 @@ type BoardState = {
 export const useBoardStore = create<BoardState>((set, get) => ({
   currentBoard: null,
   loading: false,
+  boardMembers: [],
 
   setCurrentBoard: (board) => set({ currentBoard: board }),
+
+  getBoardMembers: async (boardId) => {
+    if (!boardId) return;
+
+    set({ loading: true });
+
+    try {
+      const members = await getBoardMember(boardId);
+
+      set({
+        boardMembers: members || [],
+        loading: false,
+      });
+    } catch (error) {
+      console.error("Failed to fetch board members:", error);
+      set({ loading: false });
+    }
+  },
 
   updateBackgroundFile: async (boardId, file) => {
     if (!boardId || !file) return;
