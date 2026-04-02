@@ -49,8 +49,8 @@ export const cardAPI = {
   getCardMembers: (cardId: number) => {
     return api.get(`/card/${cardId}/members`);
   },
-  commentCard: (cardId: number, content: string) => {
-    return api.post(`/card/${cardId}/comment`, { content });
+  commentCard: (cardId: number, content: string, clientId: number) => {
+    return api.post(`/card/${cardId}/comment`, { content, clientId });
   },
   updateComment: (commentId: number, content: string) => {
     return api.put(`/card/comment/${commentId}`, { content });

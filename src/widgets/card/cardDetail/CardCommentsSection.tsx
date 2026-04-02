@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useCardStore } from "../../../features/card/model/cardStore";
 import { useAuthStore } from "../../../entities/auth/model/auth.store";
+import { socket } from "../../../shared/lib/socket";
 
 type Props = {
   cardId: number;
@@ -30,6 +31,38 @@ export default function CardCommentsSection({ cardId }: Props) {
       fetchUser();
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    socket.emit("join-card", cardId);
+
+    return () => {
+      socket.emit("leave-card", cardId);
+    };
+  }, [cardId]);
+
+  useEffect(() => {
+    socket.on("comment-created", (newComment) => {
+      const currentUserId = useAuthStore.getState().user?.id;
+
+      if (newComment.user?.id === currentUserId) return;
+
+      useCardStore.getState().addCommentRealtime(cardId, newComment);
+    });
+
+    socket.on("comment-updated", (updated) => {
+      useCardStore.getState().updateCommentRealtime(updated);
+    });
+
+    socket.on("comment-deleted", ({ commentId }) => {
+      useCardStore.getState().deleteCommentRealtime(cardId, commentId);
+    });
+
+    return () => {
+      socket.off("comment-created");
+      socket.off("comment-updated");
+      socket.off("comment-deleted");
+    };
+  }, [cardId]);
 
   useEffect(() => {
     if (!comments || comments.length === 0) {
@@ -142,7 +175,6 @@ export default function CardCommentsSection({ cardId }: Props) {
                   <div className="flex gap-3 text-xs text-gray-500 mt-1 opacity-0 group-hover:opacity-100 transition">
                     {editingId === c.id ? (
                       <>
-                       
                         <button
                           disabled={loadingId === c.id}
                           onClick={async () => {

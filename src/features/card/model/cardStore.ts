@@ -15,6 +15,7 @@ import { deleteComment } from "./comment/deleteComment";
 import { updateComment } from "./comment/updateComment";
 import { createCommentCard } from "./comment/createCommentCard";
 import { getCommentByCardId } from "./comment/getCommentByCardId";
+import type { CommentType } from "../../../entities/comment/model/commentType";
 
 type CardState = {
   cards: Card[];
@@ -51,6 +52,9 @@ type CardState = {
   addComment: (cardId: number, content: string) => Promise<void>;
   updateComment: (commentId: number, content: string) => Promise<void>;
   deleteComment: (cardId: number, commentId: number) => Promise<void>;
+  addCommentRealtime: (cardId: number, comment: CommentType) => void;
+  updateCommentRealtime: (updated: CommentType) => void;
+  deleteCommentRealtime: (cardId: number, commentId: number) => void;
 };
 
 export const useCardStore = create<CardState>((set, get) => ({
@@ -270,14 +274,65 @@ export const useCardStore = create<CardState>((set, get) => ({
       console.error("Failed to get comments", error);
     }
   },
+
+  // addComment: async (cardId, content) => {
+  //   const tempId = Date.now();
+
+  //   const clientId = Date.now();
+
+  //   const tempComment = {
+  //     id: clientId,
+  //     clientId,
+  //     card_id: cardId,
+  //     content,
+  //     created_at: new Date().toISOString(),
+  //   };
+
+  //   set((state) => ({
+  //     commentsByCardId: {
+  //       ...state.commentsByCardId,
+  //       [cardId]: [...(state.commentsByCardId[cardId] || []), tempComment],
+  //     },
+  //   }));
+
+  //   try {
+  //     const newComment = await await createCommentCard(
+  //       cardId,
+  //       content,
+  //       clientId,
+  //     );
+
+  //     set((state) => ({
+  //       commentsByCardId: {
+  //         ...state.commentsByCardId,
+  //         [cardId]: state.commentsByCardId[cardId].map((c) =>
+  //           c.id === tempId ? newComment : c,
+  //         ),
+  //       },
+  //     }));
+  //   } catch (error) {
+  //     // rollback
+  //     set((state) => ({
+  //       commentsByCardId: {
+  //         ...state.commentsByCardId,
+  //         [cardId]: state.commentsByCardId[cardId].filter(
+  //           (c) => c.id !== tempId,
+  //         ),
+  //       },
+  //     }));
+  //     throw error;
+  //   }
+  // },
+
   addComment: async (cardId, content) => {
-    const tempId = Date.now();
+    const clientId = Date.now();
 
     const tempComment = {
-      id: tempId,
+      id: clientId,
+      clientId,
       card_id: cardId,
       content,
-      user: { name: "You" }, // optional
+      user: { name: "You" },
       created_at: new Date().toISOString(),
     };
 
@@ -289,29 +344,22 @@ export const useCardStore = create<CardState>((set, get) => ({
     }));
 
     try {
-      const newComment = await createCommentCard(cardId, content);
+      const newComment = await createCommentCard(cardId, content, clientId);
 
-      set((state) => ({
-        commentsByCardId: {
-          ...state.commentsByCardId,
-          [cardId]: state.commentsByCardId[cardId].map((c) =>
-            c.id === tempId ? newComment : c,
-          ),
-        },
-      }));
+      // ❌ KHÔNG cần replace nữa → để socket xử lý
     } catch (error) {
-      // rollback
       set((state) => ({
         commentsByCardId: {
           ...state.commentsByCardId,
           [cardId]: state.commentsByCardId[cardId].filter(
-            (c) => c.id !== tempId,
+            (c) => c.clientId !== clientId,
           ),
         },
       }));
       throw error;
     }
   },
+
   updateComment: async (commentId, content) => {
     const previous = get().commentsByCardId;
 
@@ -350,5 +398,58 @@ export const useCardStore = create<CardState>((set, get) => ({
       set({ commentsByCardId: previous }); // rollback
       throw error;
     }
+  },
+
+  addCommentRealtime: (cardId: number, comment: CommentType) => {
+    set((state) => {
+      const existing = state.commentsByCardId[cardId] || [];
+
+      // 🔥 nếu trùng clientId → replace temp
+      const index = existing.findIndex(
+        (c) => c.clientId && c.clientId === comment.clientId,
+      );
+
+      if (index !== -1) {
+        const updated = [...existing];
+        updated[index] = comment;
+
+        return {
+          commentsByCardId: {
+            ...state.commentsByCardId,
+            [cardId]: updated,
+          },
+        };
+      }
+
+      // user khác → add bình thường
+      return {
+        commentsByCardId: {
+          ...state.commentsByCardId,
+          [cardId]: [...existing, comment],
+        },
+      };
+    });
+  },
+
+  updateCommentRealtime: (updated: CommentType) => {
+    set((state) => ({
+      commentsByCardId: Object.fromEntries(
+        Object.entries(state.commentsByCardId).map(([cardId, comments]) => [
+          Number(cardId),
+          comments.map((c) => (c.id === updated.id ? updated : c)),
+        ]),
+      ),
+    }));
+  },
+
+  deleteCommentRealtime: (cardId: number, commentId: number) => {
+    set((state) => ({
+      commentsByCardId: {
+        ...state.commentsByCardId,
+        [cardId]: state.commentsByCardId[cardId]?.filter(
+          (c) => c.id !== commentId,
+        ),
+      },
+    }));
   },
 }));
