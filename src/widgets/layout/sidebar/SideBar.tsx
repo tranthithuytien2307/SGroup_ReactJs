@@ -1,7 +1,6 @@
 import SideBarHeader from "./SideBarHeader";
 import SideBarContent from "./SideBarContent";
 import SideBarFooter from "./SideBarFooter";
-import { getInformationUser } from "../../../features/auth/informationUser/getInformationUser";
 import { useEffect, useState } from "react";
 import { boardAPI } from "../../../entities/board/api/boardAPI";
 import type { Board } from "../../../entities/board/model/boardType";
@@ -9,6 +8,7 @@ import { useSelectedWorkspace } from "../../../features/workspace/SelectedWorksp
 import { useWorkspace } from "../../../features/workspace/WorkspaceContext";
 import { useNavigate } from "react-router-dom";
 import { PATH } from "../../../shared/config/PATH";
+import { getInformationUser } from "../../../features/auth/informationUser/model/getInformationUser";
 
 interface UserType {
   id: number;

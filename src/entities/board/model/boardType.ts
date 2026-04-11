@@ -8,4 +8,8 @@ export type Board = {
   workspace_id?: number;
   cover_url?: string | null;
   theme?: string | null;
+  visibility?: "private" | "workspace" | "public";
+  is_archived?: boolean;
+  invite_token?: string | null;
+  created_at?: string;
 };

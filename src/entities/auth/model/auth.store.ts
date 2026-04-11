@@ -45,6 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         name: user.name,
         avatar_url: user.avatar_url,
         isVerified: user.isVerified ?? true,
+        bio: user.bio ?? null,
       };
 
       localStorage.setItem("user", JSON.stringify(formattedUser));

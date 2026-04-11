@@ -4,6 +4,7 @@ export interface User {
   isVerified: boolean;
   avatar_url: string | null;
   name: string;
+  bio: string | null;
 }
 
 export interface BoardMember {

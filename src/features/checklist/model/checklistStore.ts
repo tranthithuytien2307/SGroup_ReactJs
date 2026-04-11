@@ -97,7 +97,6 @@ export const useChecklistStore = create<ChecklistState>((set, get) => ({
         if (ch.items?.length) {
           setInitialItems(ch.id, ch.items);
 
-          // ✅ TÍNH PROGRESS NGAY TẠI ĐÂY
           const total = ch.items.length;
           const done = ch.items.filter((i: any) => i.is_completed).length;
 
@@ -107,7 +106,6 @@ export const useChecklistStore = create<ChecklistState>((set, get) => ({
         }
       });
 
-      // ✅ set progress vào store
       useChecklistItemStore.setState((state) => ({
         progressByChecklistId: {
           ...state.progressByChecklistId,

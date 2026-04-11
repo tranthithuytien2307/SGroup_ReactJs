@@ -61,4 +61,13 @@ export const cardAPI = {
   getCommentByCardId: (cardId: number) => {
     return api.get(`/card/${cardId}/comment`);
   },
+  archiveCard: (cardId: number) => {
+    return api.patch(`/card/${cardId}/archive`);
+  },
+  unarchiveCard: (cardId: number) => {
+    return api.patch(`/card/${cardId}/unarchive`);
+  },
+  updateMarkComplete: (cardId: number) => {
+    return api.patch(`/card/complete`, { card_id: cardId });
+  },
 };

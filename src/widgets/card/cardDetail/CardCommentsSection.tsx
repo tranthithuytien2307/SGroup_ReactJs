@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCardStore } from "../../../features/card/model/cardStore";
 import { useAuthStore } from "../../../entities/auth/model/auth.store";
 import { socket } from "../../../shared/lib/socket";
+import { useCommentStore } from "../../../features/comment/model/commentStore";
 
 type Props = {
   cardId: number;
@@ -11,15 +12,15 @@ export default function CardCommentsSection({ cardId }: Props) {
   const [comment, setComment] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState("");
-  const [loadingId, setLoadingId] = useState<number | null>(null); // ✅ (1)
+  const [loadingId, setLoadingId] = useState<number | null>(null);
 
-  const bottomRef = useRef<HTMLDivElement | null>(null); // ✅ (4)
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const comments = useCardStore((s) => s.commentsByCardId[cardId]);
-  const getComments = useCardStore((s) => s.getComments);
-  const addComment = useCardStore((s) => s.addComment);
-  const updateComment = useCardStore((s) => s.updateComment);
-  const deleteComment = useCardStore((s) => s.deleteComment);
+  const getComments = useCommentStore((s) => s.getComments);
+  const addComment = useCommentStore((s) => s.addComment);
+  const updateComment = useCommentStore((s) => s.updateComment);
+  const deleteComment = useCommentStore((s) => s.deleteComment);
 
   const currentUser = useAuthStore((s) => s.user);
   const fetchUser = useAuthStore((s) => s.fetchUser);
@@ -46,15 +47,15 @@ export default function CardCommentsSection({ cardId }: Props) {
 
       if (newComment.user?.id === currentUserId) return;
 
-      useCardStore.getState().addCommentRealtime(cardId, newComment);
+      useCommentStore.getState().addCommentRealtime(cardId, newComment);
     });
 
     socket.on("comment-updated", (updated) => {
-      useCardStore.getState().updateCommentRealtime(updated);
+      useCommentStore.getState().updateCommentRealtime(updated);
     });
 
     socket.on("comment-deleted", ({ commentId }) => {
-      useCardStore.getState().deleteCommentRealtime(cardId, commentId);
+      useCommentStore.getState().deleteCommentRealtime(cardId, commentId);
     });
 
     return () => {
@@ -96,7 +97,6 @@ export default function CardCommentsSection({ cardId }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* INPUT */}
       <div className="flex gap-3">
         <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm">
           {currentUser?.name?.[0] || "U"}

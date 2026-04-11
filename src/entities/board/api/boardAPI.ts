@@ -94,4 +94,20 @@ export const boardAPI = {
       },
     });
   },
+
+  getBoardCreator: (boardId: number) => {
+    return api.get(`/board/${boardId}/creator`);
+  },
+
+  updateBoardVisibility: (boardId: number, visibility: string) => {
+    return api.patch(`/board/visibility/${boardId}`, { visibility });
+  },
+
+  getBoardArchived: (boardId: number) => {
+    return api.get(`/board/${boardId}/archived`);
+  },
+
+  getBoardByUserId: () => {
+    return api.get(`/board/my-boards`);
+  },
 };

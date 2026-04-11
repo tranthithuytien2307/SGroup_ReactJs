@@ -1,9 +1,11 @@
 import React from "react";
 import { X, ChevronLeft, User, AlignLeft, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { PATH } from "../../../shared/config/PATH";
 
 interface AboutBoardProps {
-  onClose: () => void; // Đóng hoàn toàn menu
-  onBack: () => void; // Quay lại menu chính
+  onClose: () => void;
+  onBack: () => void;
   adminName: string;
 }
 
@@ -12,6 +14,10 @@ const AboutBoard: React.FC<AboutBoardProps> = ({
   onBack,
   adminName,
 }) => {
+  const navigate = useNavigate();
+  const handleUpdateProfile = () => {
+    navigate(PATH.UPDATE_PROFILE);
+  };
   return (
     <div className="fixed top-0 right-0 w-[340px] h-full bg-white shadow-2xl z-[100] flex flex-col animate-in slide-in-from-right duration-300">
       {/* Header */}
@@ -48,7 +54,10 @@ const AboutBoard: React.FC<AboutBoardProps> = ({
                 {adminName}
               </div>
               <div className="text-xs text-gray-500">@tientrnththuy</div>
-              <button className="text-xs text-gray-600 underline mt-1 block hover:text-black transition-colors">
+              <button
+                className="text-xs text-gray-600 underline mt-1 block hover:text-black transition-colors"
+                onClick={handleUpdateProfile}
+              >
                 Sửa thông tin hồ sơ
               </button>
             </div>

@@ -59,7 +59,27 @@ export default function BoardPage() {
   const lists = useListStore((state) => state.lists);
   const setLists = useListStore((state) => state.setLists);
   const moveListStore = useListStore((state) => state.moveList);
+  useEffect(() => {
+    const fetchLink = async () => {
+      if (!boardId) return;
+      const boardData = await getBoardById(boardId);
+      const listData = await getListByBoardId(boardId);
+      const members = await getBoardMember(boardId);
+      setBoardMember(members);
 
+      const normalizedLists: List[] = listData.map((list: List) => ({
+        ...list,
+        Cards: Array.isArray(list.cards) ? list.cards : [],
+      }));
+
+      setLists(normalizedLists);
+
+      setBoard(boardData);
+      setCurrentBoard(boardData);
+    };
+
+    fetchLink();
+  }, [boardId]);
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
 
@@ -156,28 +176,6 @@ export default function BoardPage() {
     const allCards = lists.flatMap((list) => list.cards || []);
     setCards(allCards);
   }, [lists]);
-
-  useEffect(() => {
-    const fetchLink = async () => {
-      if (!boardId) return;
-      const boardData = await getBoardById(boardId);
-      const listData = await getListByBoardId(boardId);
-      const members = await getBoardMember(boardId);
-      setBoardMember(members);
-
-      const normalizedLists: List[] = listData.map((list: List) => ({
-        ...list,
-        Cards: Array.isArray(list.cards) ? list.cards : [],
-      }));
-
-      setLists(normalizedLists);
-
-      setBoard(boardData);
-      setCurrentBoard(boardData);
-    };
-
-    fetchLink();
-  }, [boardId]);
 
   useEffect(() => {
     const fetchWorkspaceMembers = async () => {

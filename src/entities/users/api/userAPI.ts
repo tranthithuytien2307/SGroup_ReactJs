@@ -5,7 +5,7 @@ export const userAPI = {
     return api.get("/auth/information");
   },
 
-  updateProfile: (data: { name: string; email: string }) => {
+  updateProfile: (data: { name: string; email: string; bio: string }) => {
     return api.put("/user/profile", data);
   },
 

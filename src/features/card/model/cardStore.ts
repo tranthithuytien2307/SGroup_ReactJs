@@ -6,21 +6,24 @@ import { moveCard } from "./moveCard";
 import { deleteCrad } from "./deleteCard";
 import { updateCard } from "./updateCard";
 import { createCard } from "./createCard";
-import { boardAPI } from "../../../entities/board/api/boardAPI";
 import { addMemberToCard } from "./addMemberToCard";
 import { removeMemberFromCard } from "./removeMemberFromCard";
 import { getCardMembers } from "./getCardMembers";
 import { useBoardStore } from "../../board/model/boardStore";
-import { deleteComment } from "./comment/deleteComment";
-import { updateComment } from "./comment/updateComment";
-import { createCommentCard } from "./comment/createCommentCard";
-import { getCommentByCardId } from "./comment/getCommentByCardId";
-import type { CommentType } from "../../../entities/comment/model/commentType";
+import { archiveCard } from "./archiveCard";
+import { unarchiveCard } from "./unarchiveCard";
+import { updateMarkComplete } from "./updateMarkComplete";
 
 type CardState = {
   cards: Card[];
   loading: boolean;
   commentsByCardId: Record<number, any[]>;
+
+  pendingArchive: Record<number, ReturnType<typeof setTimeout>>;
+  archivedCards: Record<number, Card>;
+  toggleComplete: (cardId: number) => Promise<void>;
+  archiveCardOptimistic: (cardId: number) => void;
+  undoArchive: (cardId: number) => void;
 
   getMembers: (cardId: number) => Promise<void>;
 
@@ -47,20 +50,14 @@ type CardState = {
   ) => Promise<void>;
   addMember: (cardId: number, userId: number) => Promise<void>;
   removeMember: (cardId: number, userId: number) => Promise<void>;
-
-  getComments: (cardId: number) => Promise<void>;
-  addComment: (cardId: number, content: string) => Promise<void>;
-  updateComment: (commentId: number, content: string) => Promise<void>;
-  deleteComment: (cardId: number, commentId: number) => Promise<void>;
-  addCommentRealtime: (cardId: number, comment: CommentType) => void;
-  updateCommentRealtime: (updated: CommentType) => void;
-  deleteCommentRealtime: (cardId: number, commentId: number) => void;
 };
 
 export const useCardStore = create<CardState>((set, get) => ({
   cards: [],
   loading: false,
   commentsByCardId: {},
+  pendingArchive: {},
+  archivedCards: {},
 
   setCards: (cards) => set({ cards }),
 
@@ -115,7 +112,6 @@ export const useCardStore = create<CardState>((set, get) => ({
 
   updateCardDetail: async (cardId, data) => {
     const previousCards = get().cards;
-    // Cập nhật UI trước
     set((state) => ({
       cards: state.cards.map((c) => (c.id === cardId ? { ...c, ...data } : c)),
     }));
@@ -123,7 +119,7 @@ export const useCardStore = create<CardState>((set, get) => ({
     try {
       await updateCard(cardId, data);
     } catch (error) {
-      set({ cards: previousCards }); // Rollback nếu lỗi
+      set({ cards: previousCards });
       throw error;
     }
   },
@@ -260,196 +256,91 @@ export const useCardStore = create<CardState>((set, get) => ({
       throw error;
     }
   },
-  getComments: async (cardId) => {
-    try {
-      const data = await getCommentByCardId(cardId);
 
-      set((state) => ({
-        commentsByCardId: {
-          ...state.commentsByCardId,
-          [cardId]: data || [],
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to get comments", error);
-    }
-  },
-
-  // addComment: async (cardId, content) => {
-  //   const tempId = Date.now();
-
-  //   const clientId = Date.now();
-
-  //   const tempComment = {
-  //     id: clientId,
-  //     clientId,
-  //     card_id: cardId,
-  //     content,
-  //     created_at: new Date().toISOString(),
-  //   };
-
-  //   set((state) => ({
-  //     commentsByCardId: {
-  //       ...state.commentsByCardId,
-  //       [cardId]: [...(state.commentsByCardId[cardId] || []), tempComment],
-  //     },
-  //   }));
-
-  //   try {
-  //     const newComment = await await createCommentCard(
-  //       cardId,
-  //       content,
-  //       clientId,
-  //     );
-
-  //     set((state) => ({
-  //       commentsByCardId: {
-  //         ...state.commentsByCardId,
-  //         [cardId]: state.commentsByCardId[cardId].map((c) =>
-  //           c.id === tempId ? newComment : c,
-  //         ),
-  //       },
-  //     }));
-  //   } catch (error) {
-  //     // rollback
-  //     set((state) => ({
-  //       commentsByCardId: {
-  //         ...state.commentsByCardId,
-  //         [cardId]: state.commentsByCardId[cardId].filter(
-  //           (c) => c.id !== tempId,
-  //         ),
-  //       },
-  //     }));
-  //     throw error;
-  //   }
-  // },
-
-  addComment: async (cardId, content) => {
-    const clientId = Date.now();
-
-    const tempComment = {
-      id: clientId,
-      clientId,
-      card_id: cardId,
-      content,
-      user: { name: "You" },
-      created_at: new Date().toISOString(),
-    };
-
+  toggleComplete: async (cardId) => {
+    const previousCards = get().cards;
     set((state) => ({
-      commentsByCardId: {
-        ...state.commentsByCardId,
-        [cardId]: [...(state.commentsByCardId[cardId] || []), tempComment],
-      },
-    }));
-
-    try {
-      const newComment = await createCommentCard(cardId, content, clientId);
-
-      // ❌ KHÔNG cần replace nữa → để socket xử lý
-    } catch (error) {
-      set((state) => ({
-        commentsByCardId: {
-          ...state.commentsByCardId,
-          [cardId]: state.commentsByCardId[cardId].filter(
-            (c) => c.clientId !== clientId,
-          ),
-        },
-      }));
-      throw error;
-    }
-  },
-
-  updateComment: async (commentId, content) => {
-    const previous = get().commentsByCardId;
-
-    // update UI trước
-    set((state) => ({
-      commentsByCardId: Object.fromEntries(
-        Object.entries(state.commentsByCardId).map(([cardId, comments]) => [
-          cardId,
-          comments.map((c) => (c.id === commentId ? { ...c, content } : c)),
-        ]),
+      cards: state.cards.map((card) =>
+        card.id === cardId
+          ? { ...card, is_completed: !card.is_completed }
+          : card,
       ),
     }));
 
     try {
-      await updateComment(commentId, content);
-    } catch (error) {
-      set({ commentsByCardId: previous }); // rollback
-      throw error;
-    }
-  },
-  deleteComment: async (cardId, commentId) => {
-    const previous = get().commentsByCardId;
+      const currentCard = previousCards.find((c) => c.id === cardId);
+      if (!currentCard) return;
 
-    set((state) => ({
-      commentsByCardId: {
-        ...state.commentsByCardId,
-        [cardId]: state.commentsByCardId[cardId]?.filter(
-          (c) => c.id !== commentId,
-        ),
-      },
-    }));
-
-    try {
-      await deleteComment(commentId);
+      await updateMarkComplete(cardId);
     } catch (error) {
-      set({ commentsByCardId: previous }); // rollback
+      console.error("Failed to toggle complete:", error);
+      set({ cards: previousCards });
       throw error;
     }
   },
 
-  addCommentRealtime: (cardId: number, comment: CommentType) => {
-    set((state) => {
-      const existing = state.commentsByCardId[cardId] || [];
+  archiveCardOptimistic: (cardId) => {
+    const card = get().cards.find((c) => c.id === cardId);
+    if (!card) return;
 
-      // 🔥 nếu trùng clientId → replace temp
-      const index = existing.findIndex(
-        (c) => c.clientId && c.clientId === comment.clientId,
-      );
+    const timeout = setTimeout(async () => {
+      await archiveCard(cardId);
 
-      if (index !== -1) {
-        const updated = [...existing];
-        updated[index] = comment;
+      set((state) => {
+        const newPending = { ...state.pendingArchive };
+        delete newPending[cardId];
+
+        const newArchived = { ...state.archivedCards };
+        delete newArchived[cardId];
 
         return {
-          commentsByCardId: {
-            ...state.commentsByCardId,
-            [cardId]: updated,
-          },
+          pendingArchive: newPending,
+          archivedCards: newArchived,
         };
-      }
+      });
+    }, 4000);
 
-      // user khác → add bình thường
-      return {
-        commentsByCardId: {
-          ...state.commentsByCardId,
-          [cardId]: [...existing, comment],
-        },
-      };
-    });
-  },
-
-  updateCommentRealtime: (updated: CommentType) => {
     set((state) => ({
-      commentsByCardId: Object.fromEntries(
-        Object.entries(state.commentsByCardId).map(([cardId, comments]) => [
-          Number(cardId),
-          comments.map((c) => (c.id === updated.id ? updated : c)),
-        ]),
-      ),
-    }));
-  },
+      cards: state.cards.filter((c) => c.id !== cardId),
 
-  deleteCommentRealtime: (cardId: number, commentId: number) => {
-    set((state) => ({
-      commentsByCardId: {
-        ...state.commentsByCardId,
-        [cardId]: state.commentsByCardId[cardId]?.filter(
-          (c) => c.id !== commentId,
-        ),
+      pendingArchive: {
+        ...state.pendingArchive,
+        [cardId]: timeout,
+      },
+
+      archivedCards: {
+        ...state.archivedCards,
+        [cardId]: card,
       },
     }));
+  },
+  undoArchive: async (cardId) => {
+    const state = get();
+
+    const timeout = state.pendingArchive[cardId];
+    if (timeout) clearTimeout(timeout);
+
+    const card = state.archivedCards[cardId];
+    if (!card) return;
+
+    try {
+      await unarchiveCard(cardId);
+
+      set((state) => {
+        const newPending = { ...state.pendingArchive };
+        delete newPending[cardId];
+
+        const newArchived = { ...state.archivedCards };
+        delete newArchived[cardId];
+
+        return {
+          pendingArchive: newPending,
+          archivedCards: newArchived,
+          cards: [...state.cards, card],
+        };
+      });
+    } catch (error) {
+      console.error("Undo archive failed", error);
+    }
   },
 }));

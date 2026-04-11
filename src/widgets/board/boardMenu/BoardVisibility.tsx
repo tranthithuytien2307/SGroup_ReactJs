@@ -8,11 +8,14 @@ import {
   Globe,
   Check,
 } from "lucide-react";
+import { useBoardStore } from "../../../features/board/model/boardStore";
+
+type Visibility = "private" | "workspace" | "public";
 
 interface BoardVisibilityProps {
   onClose: () => void;
   onBack: () => void;
-  currentVisibility: "private" | "workspace" | "org" | "public";
+  currentVisibility: Visibility;
 }
 
 const BoardVisibility: React.FC<BoardVisibilityProps> = ({
@@ -20,6 +23,8 @@ const BoardVisibility: React.FC<BoardVisibilityProps> = ({
   onBack,
   currentVisibility,
 }) => {
+  const { currentBoard, updateBoardVisibility, loading } = useBoardStore();
+
   const options = [
     {
       id: "private",
@@ -54,7 +59,6 @@ const BoardVisibility: React.FC<BoardVisibilityProps> = ({
 
   return (
     <div className="fixed top-0 right-0 w-[340px] h-full bg-white shadow-2xl z-[100] flex flex-col animate-in slide-in-from-right duration-300">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200">
         <button
           onClick={onBack}
@@ -71,13 +75,17 @@ const BoardVisibility: React.FC<BoardVisibilityProps> = ({
         </button>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-2">
         <div className="space-y-1">
           {options.map((opt) => (
             <button
               key={opt.id}
-              disabled={opt.disabled}
+              disabled={opt.disabled || loading}
+              onClick={() => {
+                if (opt.disabled || !currentBoard) return;
+
+                updateBoardVisibility(currentBoard.id, opt.id as Visibility);
+              }}
               className={`w-full text-left p-3 rounded-md transition-colors relative ${
                 opt.disabled
                   ? "opacity-50 cursor-not-allowed"

@@ -102,9 +102,7 @@ export default function CardDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      {/* Container chính: Đặt max-height và flex-col */}
       <div className="bg-[#f4f5f7] w-full max-w-[1000px] max-h-[90vh] rounded-lg shadow-xl flex flex-col relative overflow-hidden">
-        {/* --- PHẦN 1: HEADER (CỐ ĐỊNH - KHÔNG SCROLL) --- */}
         <div className="bg-white p-6 pb-4 shrink-0 z-10 border-b">
           <div className="flex justify-between items-start pr-10">
             <div className="w-full">
@@ -125,9 +123,7 @@ export default function CardDetailModal({
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
-          {/* CỘT TRÁI: Toolbar và các Sections */}
           <div className="flex-1 p-6 space-y-6 bg-white overflow-y-auto custom-scrollbar">
-            {/* TOOLBAR NÚT BẤM */}
             <div className="flex gap-2 flex-wrap shrink-0">
               <div className="relative">
                 <button
@@ -150,7 +146,6 @@ export default function CardDetailModal({
                   />
                 )}
 
-                {/* Label selector */}
                 {openLabelPopup && (
                   <LabelSelectorPopup
                     cardId={card.id}
@@ -218,7 +213,6 @@ export default function CardDetailModal({
                   />
                 )}
 
-                {/* Checklist popup */}
                 {openChecklistPopup && (
                   <ChecklistPopup
                     card={currentCard}
@@ -230,7 +224,6 @@ export default function CardDetailModal({
                   />
                 )}
 
-                {/* Date popup */}
                 {openDatePopup && (
                   <DateSelectorPopup
                     cardId={card.id}
@@ -326,7 +319,6 @@ export default function CardDetailModal({
                 Nhận xét và hoạt động
               </p>
             </div>
-            {/* Chỉ vùng này cuộn */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
               <CardCommentsSection cardId={currentCard.id} />
             </div>

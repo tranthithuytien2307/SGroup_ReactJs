@@ -64,9 +64,9 @@ export default function BoardList({
         title={title}
         onRename={(newTitle) => onRename(id, newTitle)}
         onDelete={() => onDeleteList(id)}
+        onAddCard={() => setIsAdding(true)}
+        listId={id}
       />
-
-      {/* Vùng thả thẻ (Droppable) */}
       <Droppable
         droppableId={id.toString()}
         type="CARD"
@@ -89,8 +89,7 @@ export default function BoardList({
                 <CardItem
                   key={card.id}
                   cardId={card.id}
-                  index={index} // Quan trọng: Truyền index để DnD định vị
-                  avatars={[]}
+                  index={index}
                   onClick={() => setOpenCardDetailId(card.id)}
                 />
               ))
@@ -100,7 +99,6 @@ export default function BoardList({
         )}
       </Droppable>
 
-      {/* Footer: Thêm thẻ mới */}
       <div className="mt-2">
         {isAdding ? (
           <AddItemForm
@@ -122,7 +120,6 @@ export default function BoardList({
         )}
       </div>
 
-      {/* Modal chi tiết thẻ */}
       {openCardDetailId && currentCard && (
         <CardDetailModal
           card={currentCard}

@@ -19,12 +19,11 @@ export default function LabelSelectorPopup({
   onEditLabel: (label: Label) => void;
 }) {
   const [search, setSearch] = useState("");
-  const labels: Label[] = useLabelStore(
-    (state) => state.labelsByBoardId[boardId] || [],
-  );
-  const labelsOfCard = useLabelStore(
-    (state) => state.labelsByCardId[cardId] || [],
-  );
+  const labels = useLabelStore((state) => state.labelsByBoardId[boardId]) || [];
+  const getLabelByBoardId = useLabelStore((state) => state.getLabelsByBoardId);
+
+  const labelsOfCard =
+    useLabelStore((state) => state.labelsByCardId[cardId]) || [];
   const attachLabel = useLabelStore((state) => state.attachLabelsToCard);
   const detachLabel = useLabelStore((state) => state.detachLabelsFromCard);
   const isChecked = (id: number) => labelsOfCard.some((l) => l.id === id);
@@ -39,6 +38,12 @@ export default function LabelSelectorPopup({
   const filtered = labels.filter((l) =>
     (l.name || "").toLowerCase().includes(search.toLowerCase()),
   );
+
+  useEffect(() => {
+    if (!labels.length) {
+      getLabelByBoardId(boardId);
+    }
+  }, [boardId]);
 
   return (
     <div className="absolute top-12 left-0 w-[320px] bg-white shadow-xl rounded-lg border z-999">

@@ -1,4 +1,4 @@
-import { userAPI } from "../../../entities/users/api/userAPI";
+import { userAPI } from "../../../../entities/users/api/userAPI";
 
 interface UserType {
   id: number;
@@ -13,7 +13,7 @@ interface UserType {
 }
 
 export async function getInformationUser(
-  setDataUser: React.Dispatch<React.SetStateAction<UserType | null>>
+  setDataUser: React.Dispatch<React.SetStateAction<UserType | null>>,
 ) {
   try {
     const res = await userAPI.getInformation();

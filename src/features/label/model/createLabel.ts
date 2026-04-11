@@ -10,7 +10,7 @@ export const createLabel = async (
 
   try {
     const res = await labelAPI.createLabel(board_id, name, color);
-    return res.data;
+    return res.data.responseObject;
   } catch (error) {
     console.error("Failed to create label: ", error);
     throw error;

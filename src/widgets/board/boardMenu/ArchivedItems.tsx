@@ -1,25 +1,105 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { X, ChevronLeft, Archive as ArchiveIcon } from "lucide-react";
+import { useBoardStore } from "../../../features/board/model/boardStore";
+import { unarchiveCard } from "../../../features/card/model/unarchiveCard";
+import { useListStore } from "../../../features/list/model/listStore";
+import { useCardStore } from "../../../features/card/model/cardStore";
+import { getListByBoardId } from "../../../features/list/model/getListByBoardId";
+import type { List } from "../../../entities/list/model/listType";
 
 interface ArchivedItemsProps {
   onClose: () => void;
   onBack: () => void;
+  boardId: number;
 }
 
-const ArchivedItems: React.FC<ArchivedItemsProps> = ({ onClose, onBack }) => {
-  const archivedData = [
-    { id: 1, title: "thêm theo dõi ca trực", timeGroup: "Cũ hơn 14 ngày" },
-    {
-      id: 2,
-      title:
-        "gửi frame liên tục 3-5 lần liên tục thì dừng ko lấy nữa, thanh toán trực, 2 cam",
-      completed: true,
-    },
-  ];
+type ArchivedItem = {
+  id: number;
+  title: string;
+  type: "card" | "list";
+  archived_at?: string;
+};
+
+const ArchivedItems: React.FC<ArchivedItemsProps> = ({
+  onClose,
+  onBack,
+  boardId,
+}) => {
+  const archived = useBoardStore((s) => s.archivedItems);
+  const getArchived = useBoardStore((s) => s.getBoardArchived);
+  const setLists = useListStore((s) => s.setLists);
+  const setCards = useCardStore((s) => s.setCards);
+  const unarchiveList = useListStore((s) => s.unarchiveList);
+  const deleteList = useListStore((s) => s.deleteList);
+  const deleteCard = useCardStore((s) => s.deleteCard);
+
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (boardId) {
+      getArchived(boardId);
+    }
+  }, [boardId]);
+
+  const items: ArchivedItem[] = useMemo(() => {
+    const listItems: ArchivedItem[] =
+      archived?.lists?.map((l) => ({
+        id: l.id,
+        title: l.name,
+        type: "list" as const,
+        archived_at: l.archived_at ?? undefined,
+      })) || [];
+
+    const cardItems: ArchivedItem[] =
+      archived?.cards?.map((c) => ({
+        id: c.id,
+        title: c.title,
+        type: "card" as const,
+        archived_at: c.archived_at ?? undefined,
+      })) || [];
+
+    return [...listItems, ...cardItems];
+  }, [archived]);
+
+  const filteredItems = items.filter((item) =>
+    item.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const handleRestore = async (item: ArchivedItem) => {
+    try {
+      if (item.type === "card") {
+        await unarchiveCard(item.id);
+      } else {
+        await unarchiveList(item.id);
+      }
+      const listData: List[] = await getListByBoardId(boardId);
+
+      setLists(listData);
+
+      const allCards = listData.flatMap((l) => l.cards || []);
+      setCards(allCards);
+
+      await getArchived(boardId);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handleDelete = async (item: ArchivedItem) => {
+    try {
+      if (item.type === "card") {
+        await deleteCard(item.id);
+      } else {
+        await deleteList(item.id);
+      }
+      await getArchived(boardId);
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
 
   return (
     <div className="fixed top-0 right-0 w-[340px] h-full bg-white shadow-2xl z-[100] flex flex-col animate-in slide-in-from-right duration-300">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200">
         <button
           onClick={onBack}
@@ -27,7 +107,9 @@ const ArchivedItems: React.FC<ArchivedItemsProps> = ({ onClose, onBack }) => {
         >
           <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
+
         <h2 className="font-semibold text-gray-700 text-sm">Mục đã lưu trữ</h2>
+
         <button
           onClick={onClose}
           className="p-1 hover:bg-gray-100 rounded text-gray-500"
@@ -36,45 +118,55 @@ const ArchivedItems: React.FC<ArchivedItemsProps> = ({ onClose, onBack }) => {
         </button>
       </div>
 
-      <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
-        {/* Search Bar & Switcher */}
+      <div className="p-4 flex-1 overflow-y-auto">
         <div className="flex gap-2 mb-4">
           <input
             type="text"
             placeholder="Tìm kiếm"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded text-sm font-medium">
-            Danh sách
-          </button>
         </div>
 
-        {/* List Items */}
-        <div className="space-y-6">
-          <div className="text-xs font-bold text-gray-600">Cũ hơn 14 ngày</div>
+        {filteredItems.length === 0 && (
+          <p className="text-sm text-gray-500 text-center mt-10">
+            Không có mục lưu trữ
+          </p>
+        )}
 
-          {archivedData.map((item) => (
-            <div key={item.id} className="space-y-2">
-              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:border-blue-400 cursor-pointer group">
-                <div className="flex items-start gap-2">
-                  {item.completed && (
-                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                      <div className="w-2 h-1 border-l-2 border-b-2 border-white -rotate-45 mb-0.5"></div>
-                    </div>
-                  )}
-                  <span className="text-sm text-gray-700 leading-tight flex-1">
-                    {item.title}
+        <div className="space-y-3">
+          {filteredItems.map((item) => (
+            <div key={`${item.type}-${item.id}`}>
+              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:border-blue-400 cursor-pointer group transition">
+                <span className="text-sm text-gray-700">{item.title}</span>
+
+                <div className="flex items-center gap-2 mt-2 text-gray-500">
+                  <ArchiveIcon className="w-3.5 h-3.5" />
+                  <span className="text-xs">
+                    {item.type === "card"
+                      ? "Thẻ đã lưu trữ"
+                      : "Danh sách đã lưu trữ"}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 mt-3 text-gray-500">
-                  <ArchiveIcon className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">Đã lưu trữ</span>
-                </div>
               </div>
-              <div className="flex items-center gap-2 px-1 text-xs text-gray-600">
-                <button className="hover:underline">Khôi phục</button>
+
+              <div className="flex gap-2 text-xs text-gray-600 mt-1 px-1">
+                <button
+                  className="hover:underline"
+                  onClick={() => handleRestore(item)}
+                >
+                  Khôi phục
+                </button>
+
                 <span>•</span>
-                <button className="hover:underline text-red-600">Xoá</button>
+
+                <button
+                  className="hover:underline text-red-600"
+                  onClick={() => handleDelete(item)}
+                >
+                  Xoá
+                </button>
               </div>
             </div>
           ))}

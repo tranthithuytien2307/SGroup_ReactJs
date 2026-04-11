@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   X,
   UserPlus,
@@ -27,6 +27,10 @@ import ActivityView from "./boardMenu/ActivityView";
 import ArchivedItems from "./boardMenu/ArchivedItems";
 import CopyBoard from "./boardMenu/CopyBoard";
 import CloseBoardConfirmation from "./boardMenu/CloseBoardConfirmation";
+import { useBoardStore } from "../../features/board/model/boardStore";
+import CreateLabelPopup from "../card/label/CreateLabelPopup";
+import { useLabelStore } from "../../features/label/model/labelStore";
+import toast from "react-hot-toast";
 
 interface BoardMenuProps {
   onClose: () => void;
@@ -39,6 +43,17 @@ const BoardMenu: React.FC<BoardMenuProps> = ({
   boardMember,
   boardId,
 }) => {
+  const { boardCreator, getBoardCreator, currentBoard, getBoardDetail } =
+    useBoardStore();
+  const [openCreateLabel, setOpenCreateLabel] = useState(false);
+  const [titleLabel, setTitleLabel] = useState("");
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  useEffect(() => {
+    if (boardId) {
+      getBoardCreator(boardId);
+      getBoardDetail(boardId);
+    }
+  }, [boardId]);
   const [view, setView] = useState<
     | "main"
     | "about"
@@ -54,14 +69,34 @@ const BoardMenu: React.FC<BoardMenuProps> = ({
     | "copy"
     | "close_board"
   >("main");
-  const cardId = 0;
+  const createLabel = useLabelStore((s) => s.createLabel);
+  const getLabelsByBoardId = useLabelStore((s) => s.getLabelsByBoardId);
+
+  const handleCreateLabel = async () => {
+    if (!selectedColor) {
+      toast.error("Vui lòng chọn màu");
+      return;
+    }
+    try {
+      await createLabel(boardId, titleLabel || null, selectedColor);
+      setOpenCreateLabel(false);
+      setTitleLabel("");
+      setSelectedColor(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    getLabelsByBoardId(boardId);
+  }, [boardId]);
 
   if (view === "about") {
     return (
       <AboutBoard
         onClose={onClose}
         onBack={() => setView("main")}
-        adminName="Tiên Trần Thị Thúy"
+        adminName={boardCreator?.name || "Unknown"}
       />
     );
   }
@@ -70,7 +105,7 @@ const BoardMenu: React.FC<BoardMenuProps> = ({
       <BoardVisibility
         onClose={onClose}
         onBack={() => setView("main")}
-        currentVisibility="workspace"
+        currentVisibility={currentBoard?.visibility || "private"}
       />
     );
   }
@@ -108,12 +143,25 @@ const BoardMenu: React.FC<BoardMenuProps> = ({
       <div className="fixed top-0 right-0 w-[340px] h-full bg-white shadow-2xl z-[100] flex flex-col animate-in slide-in-from-right duration-300">
         <LabelSelectorPopup
           boardId={boardId}
-          cardId={cardId}
+          cardId={-1} // Không dùng cardId trong ngữ cảnh này
           onBack={() => setView("main")}
           onClose={onClose}
-          onCreateLabel={() => console.log("Mở màn hình tạo nhãn")}
+          onCreateLabel={() => setOpenCreateLabel(true)}
           onEditLabel={(label) => console.log("Mở màn hình sửa nhãn", label)}
         />
+        {openCreateLabel && (
+          <CreateLabelPopup
+            onBack={() => {
+              setOpenCreateLabel(false);
+            }}
+            onClose={() => setOpenCreateLabel(false)}
+            setTitleLabel={setTitleLabel}
+            titleLabel={titleLabel}
+            setSelectedColor={setSelectedColor}
+            selectedColor={selectedColor}
+            onCreateLabel={handleCreateLabel}
+          />
+        )}
       </div>
     );
   }
@@ -124,7 +172,13 @@ const BoardMenu: React.FC<BoardMenuProps> = ({
     return <ActivityView onClose={onClose} onBack={() => setView("main")} />;
   }
   if (view === "archived") {
-    return <ArchivedItems onClose={onClose} onBack={() => setView("main")} />;
+    return (
+      <ArchivedItems
+        onClose={onClose}
+        onBack={() => setView("main")}
+        boardId={boardId}
+      />
+    );
   }
   if (view === "copy") {
     return <CopyBoard onClose={onClose} onBack={() => setView("main")} />;

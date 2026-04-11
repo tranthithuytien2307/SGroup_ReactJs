@@ -19,6 +19,7 @@ const ForgotPasswordPage = lazy(() => import("../../pages/ForgotPasswordPage"));
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
 const BoardPage = lazy(() => import("../../pages/BoardPage"));
 const ResetPasswordPage = lazy(() => import("../../pages/ResetPasswordPage"));
+const UpdateProfilePage = lazy(() => import("../../pages/EditProfilePage"));
 
 export default function PATHS() {
   return (
@@ -35,6 +36,7 @@ export default function PATHS() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/profile/edit" element={<UpdateProfilePage />} />
 
           <Route
             element={

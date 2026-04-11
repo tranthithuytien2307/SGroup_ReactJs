@@ -19,7 +19,7 @@ const ActivityView: React.FC<{ onClose: () => void; onBack: () => void }> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"all" | "comments">("all");
 
-  // Dữ liệu mẫu dựa trên ảnh bạn gửi
+
   const data: ActivityItem[] = [
     {
       id: 1,
@@ -53,13 +53,11 @@ const ActivityView: React.FC<{ onClose: () => void; onBack: () => void }> = ({
     },
   ];
 
-  // Lọc dữ liệu dựa trên Tab đang chọn
   const filteredData =
     activeTab === "all" ? data : data.filter((item) => item.type === "comment");
 
   return (
     <div className="fixed top-0 right-0 w-[340px] h-full bg-white shadow-2xl z-[100] flex flex-col animate-in slide-in-from-right duration-300">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200">
         <button
           onClick={onBack}
@@ -76,7 +74,6 @@ const ActivityView: React.FC<{ onClose: () => void; onBack: () => void }> = ({
         </button>
       </div>
 
-      {/* Tabs điều hướng */}
       <div className="flex px-4 pt-3 border-b border-gray-100 gap-2">
         <button
           onClick={() => setActiveTab("all")}
@@ -106,7 +103,6 @@ const ActivityView: React.FC<{ onClose: () => void; onBack: () => void }> = ({
         </button>
       </div>
 
-      {/* Danh sách */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
         {filteredData.map((item) => (
           <div key={item.id} className="flex gap-3">
@@ -142,7 +138,6 @@ const ActivityView: React.FC<{ onClose: () => void; onBack: () => void }> = ({
                 {item.time}
               </div>
 
-              {/* Box hiển thị nội dung bình luận (chỉ khi type là comment) */}
               {item.type === "comment" && (
                 <div className="mt-2">
                   <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm text-sm text-gray-700 break-words">

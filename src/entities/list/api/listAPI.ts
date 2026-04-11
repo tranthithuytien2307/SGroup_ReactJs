@@ -40,4 +40,16 @@ export const listAPI = {
       newIndex,
     });
   },
+
+  copyList: (listId: number, newName: string) => {
+    return api.post(`/list/${listId}/copy`, { newName });
+  },
+
+  archiveList: (listId: number) => {
+    return api.patch(`/list/${listId}/archive`);
+  },
+
+  unarchiveList: (listId: number) => {
+    return api.patch(`/list/${listId}/unarchive`);
+  },
 };

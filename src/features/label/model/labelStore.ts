@@ -47,6 +47,10 @@ export const useLabelStore = create<LabelState>((set) => ({
 
       set((state) => ({
         labels: [...state.labels, newLabel],
+        labelsByBoardId: {
+          ...state.labelsByBoardId,
+          [boardId]: [...(state.labelsByBoardId[boardId] || []), newLabel],
+        },
       }));
     } catch (err) {
       console.error(err);
