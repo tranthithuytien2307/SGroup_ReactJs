@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import LoadingSpinner from "../../../shared/ui/LoadingSpinner";
-import { ChevronDown, ChevronRight, LayoutGrid } from "lucide-react";
+import { ChevronDown, ChevronRight, LayoutGrid, LayoutTemplate } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PATH } from "../../../shared/config/PATH";
 
@@ -31,6 +31,12 @@ export default function SideBarContent({ boards }: Props) {
   const handleOnDashboard = () => {
     navigate(PATH.DASHBOARD);
   };
+
+  const handleOnTemplates = () => {
+    navigate(PATH.TEMPLATES);
+  };
+
+  const isTemplatesActive = location.pathname === PATH.TEMPLATES;
   return (
     <div className="flex flex-col gap-4 p-2">
       <div>
@@ -38,11 +44,18 @@ export default function SideBarContent({ boards }: Props) {
           Navigation
         </p>
         <button
-          className={`flex items-center gap-2 text-sm font-medium bg-muted px-2 py-1.5 rounded-md w-full cursor-pointer ${isDashboardActive ? "bg-gray-200 text-gray-900" : "hover:bg-gray-100 text-gray-700"}`}
+          className={`flex items-center gap-2 text-sm font-medium px-2 py-1.5 rounded-md w-full cursor-pointer ${isDashboardActive ? "bg-gray-200 text-gray-900" : "hover:bg-gray-100 text-gray-700"}`}
           onClick={() => handleOnDashboard()}
         >
           <LayoutGrid className="w-4 h-4" />
           Dashboard
+        </button>
+        <button
+          className={`flex items-center gap-2 text-sm font-medium px-2 py-1.5 rounded-md w-full cursor-pointer ${isTemplatesActive ? "bg-gray-200 text-gray-900" : "hover:bg-gray-100 text-gray-700"}`}
+          onClick={() => handleOnTemplates()}
+        >
+          <LayoutTemplate className="w-4 h-4" />
+          Templates
         </button>
       </div>
 
