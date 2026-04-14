@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "../../../shared/ui/dropdown-menu";
-import { Plus, Circle, Archive } from "lucide-react";
+import { Circle, Archive } from "lucide-react";
 import type { Workspace } from "../../../entities/workspace/model/workspaceType";
 import { useWorkspaceStore } from "../../../features/workspace/model/workspaceStore";
 import toast from "react-hot-toast";
@@ -50,10 +50,18 @@ export default function SideBarHeader({
               </div>
               <div className="flex flex-col">
                 <span className="font-medium text-sm">
-                  {selected ? selected.name : "Loading..."}
+                  {selected
+                    ? selected.name
+                    : workspaces.length > 0
+                      ? "Loading..."
+                      : "No workspace yet"}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {selected ? selected.description : ""}
+                  {selected
+                    ? selected.description
+                    : workspaces.length > 0
+                      ? ""
+                      : "Create a workspace to get started"}
                 </span>
               </div>
             </div>
@@ -65,6 +73,12 @@ export default function SideBarHeader({
           <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
 
           <div className="max-h-60 overflow-y-auto pr-1">
+            {Array.isArray(workspaces) && workspaces.length === 0 && (
+              <div className="px-2 py-3 text-sm text-muted-foreground">
+                No workspace available
+              </div>
+            )}
+
             {Array.isArray(workspaces) &&
               workspaces.map((ws) => (
                 <DropdownMenuItem

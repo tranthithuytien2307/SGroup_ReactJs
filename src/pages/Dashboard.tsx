@@ -1,16 +1,14 @@
 import WorkspaceSection from "../widgets/dashboard/WorkspaceSection";
-import { workspaceAPI } from "../entities/workspace/api/workspaceAPI";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import DashboardContentHeader from "../widgets/dashboard/DashboardContentHeader";
 import { useWorkspace } from "../features/workspace/WorkspaceContext";
 import GenericFormModal from "../shared/ui/modal/GenericFormModal";
 import HeaderContent from "../shared/ui/ContentHeader";
-import { useSelectedWorkspace } from "../features/workspace/SelectedWorkspaceContext";
+import LoadingSpinner from "../shared/ui/LoadingSpinner";
 
 export default function Dashboard() {
-  const { setWorkspace, workspace, createWorkspace } = useWorkspace();
+  const { workspace, workspaces, loading, createWorkspace } = useWorkspace();
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const { selected } = useSelectedWorkspace();
 
   const modalCreateWorkspaceTexts = {
     title: "Create New Workspace",
@@ -32,23 +30,6 @@ export default function Dashboard() {
     setCreateModalOpen(false);
   };
 
-  useEffect(() => {
-    console.log("Dashboard mounted");
-    if (!selected) return;
-    console.log("Selected workspace changed:", selected);
-
-    const fetchData = async () => {
-      try {
-        const res = await workspaceAPI.getWorkspace(selected.id);
-        setWorkspace(res.data.responseObject);
-        console.log("Workspaces loaded:", res.data.responseObject);
-      } catch (err) {
-        console.log("Err: ", err);
-      }
-    };
-    fetchData();
-  }, [selected]);
-
   return (
     <div className="flex-1">
       <div className="flex flex-col h-screen">
@@ -58,7 +39,11 @@ export default function Dashboard() {
             onAddWorkspace={() => setCreateModalOpen(true)}
           />
           <div className="flex-1">
-            {workspace ? (
+            {loading ? (
+              <div className="flex min-h-[240px] items-center justify-center">
+                <LoadingSpinner />
+              </div>
+            ) : workspace ? (
               <WorkspaceSection
                 key={workspace.id}
                 id={workspace.id}
@@ -66,8 +51,19 @@ export default function Dashboard() {
                 description={workspace.description}
                 countBoard={workspace.countBoard}
               />
+            ) : workspaces.length === 0 ? (
+              <div className="flex min-h-[240px] flex-col items-start justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white px-6">
+                <p className="text-xl font-semibold text-gray-900">
+                  No workspace yet
+                </p>
+                <p className="text-sm text-gray-500">
+                  Create your first workspace to start managing boards.
+                </p>
+              </div>
             ) : (
-              <p className="">workspace null</p>
+              <div className="flex min-h-[240px] items-center justify-center">
+                <LoadingSpinner />
+              </div>
             )}
           </div>
           <GenericFormModal

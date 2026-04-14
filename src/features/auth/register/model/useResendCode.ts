@@ -7,10 +7,14 @@ export function useResendCode() {
   const resend = async (
     email: string,
     setNotice: React.Dispatch<React.SetStateAction<boolean>>,
+    setVerificationCode: React.Dispatch<React.SetStateAction<string | null>>,
+    setEmailSent: React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     try {
       setLoading(true);
-      await resendApi.resendCode(email);
+      const res = await resendApi.resendCode(email);
+      setVerificationCode(res.data.responseObject?.verificationCode ?? null);
+      setEmailSent(res.data.responseObject?.emailSent ?? true);
       setNotice(true);
     } catch (err: any) {
       alert(err?.response?.data?.message || "Resend failed");

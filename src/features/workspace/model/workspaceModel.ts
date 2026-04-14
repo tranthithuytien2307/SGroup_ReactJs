@@ -5,7 +5,7 @@ export const createWorkspaceInModel = async (
   setWorkspace: React.Dispatch<React.SetStateAction<Workspace | null>>,
   setSelected: React.Dispatch<React.SetStateAction<Workspace | null>>,
   data: { name: string; description?: string },
-) => {
+): Promise<Workspace> => {
   try {
     const res = await workspaceAPI.createWorkspace({
       name: data.name,
@@ -20,6 +20,7 @@ export const createWorkspaceInModel = async (
 
     setWorkspace(newWorkspace);
     setSelected(newWorkspace);
+    return newWorkspace;
   } catch (error) {
     console.log("Create Workspace failed: ", error);
     throw error;

@@ -11,6 +11,8 @@ import { PATH } from "../../shared/config/PATH";
 export default function VerifyEmailPage() {
   const location = useLocation();
   const email = location.state?.email;
+  const initialVerificationCode = location.state?.verificationCode ?? null;
+  const emailSent = location.state?.emailSent ?? true;
   const navigate = useNavigate();
 
   if (!email) {
@@ -21,6 +23,10 @@ export default function VerifyEmailPage() {
 
   const [code, setCode] = useState("");
   const [notice, setNotice] = useState(false);
+  const [hasEmailDelivery, setHasEmailDelivery] = useState(emailSent);
+  const [verificationCode, setVerificationCode] = useState<string | null>(
+    initialVerificationCode,
+  );
 
   const { verify, loading } = useVerifyEmail();
   const { resend, loading: resendLoading } = useResendCode();
@@ -33,8 +39,17 @@ export default function VerifyEmailPage() {
 
       <CardContent>
         <p className="text-sm text-gray-600 mb-3">
-          We sent a verification code to <b>{email}</b>
+          {hasEmailDelivery
+            ? "We sent a verification code to "
+            : "Email sending is unavailable. Use the verification code below for "}
+          <b>{email}</b>
         </p>
+
+        {verificationCode && (
+          <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Verification code: <b>{verificationCode}</b>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4">
           <div>
@@ -54,14 +69,29 @@ export default function VerifyEmailPage() {
             variant="outline"
             disabled={resendLoading}
             className="w-full"
-            onClick={() => resend(email, setNotice)}
+            onClick={() =>
+              resend(
+                email,
+                setNotice,
+                setVerificationCode,
+                setHasEmailDelivery,
+              )
+            }
           >
             Resend Code
           </Button>
         </div>
-        {notice && (
+        {false && notice && (
           <div className="mt-3 mb-3 text-center text-green-600 text-sm">
             Đã gửi lại mã, vui lòng kiểm tra email:
+            <div className="font-semibold">{email}</div>
+          </div>
+        )}
+        {notice && (
+          <div className="mt-3 mb-3 text-center text-green-600 text-sm">
+            {hasEmailDelivery
+              ? "Verification code resent. Please check email:"
+              : "Verification code regenerated. Use the code shown above for:"}
             <div className="font-semibold">{email}</div>
           </div>
         )}

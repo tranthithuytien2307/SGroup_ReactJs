@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
   type ReactNode,
 } from "react";
 import { useWorkspaces } from "./hooks/useWorkspaces";
@@ -16,7 +15,6 @@ import {
 import { createWorkspaceInModel } from "../workspace/model/workspaceModel";
 import { workspaceAPI } from "../../entities/workspace/api/workspaceAPI";
 import { useSelectedWorkspace } from "./SelectedWorkspaceContext";
-import { useBoardStore } from "../board/model/boardStore";
 import { useWorkspaceStore } from "./model/workspaceStore";
 
 export type BoardData = {
@@ -55,7 +53,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { setSelected } = useSelectedWorkspace();
 
   useEffect(() => {
-    fetchWorkspaces();
+    void fetchWorkspaces();
   }, []);
 
   const createBoard = async (workspaceId: number, data: BoardData) => {
@@ -68,7 +66,23 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const fetchWorkspaces = async () => {
     const res = await workspaceAPI.getWorkspaces();
-    setWorkspaces(res.data.responseObject);
+    const nextWorkspaces = res.data.responseObject || [];
+
+    setWorkspaces(nextWorkspaces);
+
+    setSelected((prev) => {
+      if (prev) {
+        const matchedWorkspace = nextWorkspaces.find(
+          (workspace: Workspace) => workspace.id === prev.id,
+        );
+
+        if (matchedWorkspace) {
+          return matchedWorkspace;
+        }
+      }
+
+      return nextWorkspaces[0] ?? null;
+    });
   };
 
   const deleteBoard = async (boardId: number) => {
@@ -83,7 +97,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     name: string;
     description?: string;
   }) => {
-    await createWorkspaceInModel(setWorkspace, setSelected, data);
+    const newWorkspace = await createWorkspaceInModel(
+      setWorkspace,
+      setSelected,
+      data,
+    );
+
+    setWorkspaces([...workspaces, newWorkspace]);
   };
 
   return (

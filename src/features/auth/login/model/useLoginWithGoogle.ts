@@ -11,10 +11,9 @@ export async function exchangeCode(
 
     if (data.success === true) {
       const { accessToken, refreshToken } = data.responseObject;
-      console.log("accessToken: ", accessToken);
-      console.log("refreshToken: ", refreshToken);
-      const { setTokens } = useAuthStore.getState();
+      const { setTokens, fetchUser } = useAuthStore.getState();
       setTokens(accessToken, refreshToken);
+      await fetchUser();
 
       navigate("/dashboard");
     } else {
