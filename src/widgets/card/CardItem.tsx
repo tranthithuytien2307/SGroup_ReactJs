@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clock, CheckSquare } from "lucide-react";
+import { Clock, CheckSquare, GripVertical } from "lucide-react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Pencil, Archive } from "lucide-react";
 import toast from "react-hot-toast";
@@ -130,7 +130,7 @@ export default function CardItem({ cardId, index, onClick }: CardItemProps) {
             ...provided.draggableProps.style,
             userSelect: "none",
           }}
-          className={`group relative rounded-xl p-4 shadow-sm border transition-all mb-3
+          className={`group relative rounded-xl p-4 shadow-sm border transition-all
   ${
     card.is_completed
       ? "bg-gray-100 border-gray-200 opacity-80"
@@ -139,7 +139,7 @@ export default function CardItem({ cardId, index, onClick }: CardItemProps) {
   ${
     snapshot.isDragging
       ? "shadow-2xl rotate-2 ring-2 ring-blue-400/50 z-50"
-      : "hover:shadow-md hover:-translate-y-1 cursor-pointer"
+      : "hover:shadow-md cursor-pointer"
   }
 `}
         >
@@ -155,6 +155,20 @@ export default function CardItem({ cardId, index, onClick }: CardItemProps) {
             </div>
           )}
           <div className="flex items-start gap-2">
+            <button
+              type="button"
+              {...provided.dragHandleProps}
+              onClick={(e) => e.stopPropagation()}
+              className={`mt-0.5 shrink-0 rounded-md p-1 text-gray-300 transition ${
+                snapshot.isDragging
+                  ? "bg-blue-50 text-blue-500"
+                  : "opacity-0 group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-500"
+              } cursor-grab active:cursor-grabbing`}
+              aria-label="Drag card"
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+
             <div
               onClick={handleToggleComplete}
               className={`flex items-center justify-center rounded-full border cursor-pointer transition-all duration-200
@@ -171,7 +185,6 @@ export default function CardItem({ cardId, index, onClick }: CardItemProps) {
             </div>
 
             <p
-              {...provided.dragHandleProps}
               className={`font-semibold flex-1 ${
                 card.is_completed
                   ? "line-through text-gray-400"

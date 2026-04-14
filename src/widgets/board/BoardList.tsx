@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Droppable } from "@hello-pangea/dnd";
+import { Droppable, type DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 
 import CardItem from "../card/CardItem";
 import ColumnHeader from "./ColumnHeader";
@@ -17,12 +17,13 @@ type BoardListProps = {
   cards: Card[];
   onRename: (id: number, newTitle: string) => void;
   onAddCard?: (listId: number, title: string) => void;
-  onDeleteList: (listId: number) => void;
+  onDeleteList: (_listId: number) => void;
   onUpdateCard: (
     cardId: number,
     data: { title?: string; description?: string },
   ) => void;
   onDeleteCard: (cardId: number) => void;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
 };
 
 export default function BoardList({
@@ -31,9 +32,10 @@ export default function BoardList({
   title,
   onRename,
   onAddCard,
-  onDeleteList,
+  onDeleteList: _onDeleteList,
   onUpdateCard,
   onDeleteCard,
+  dragHandleProps,
 }: BoardListProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [cardTitle, setCardTitle] = useState("");
@@ -59,13 +61,13 @@ export default function BoardList({
   };
 
   return (
-    <div className="flex flex-col w-72 flex-shrink-0 rounded-2xl border border-gray-200 bg-[#f1f2f4] p-3 shadow-sm max-h-[calc(100vh-8rem)]">
+    <div className="flex h-full w-full flex-col rounded-2xl border border-gray-200 bg-[#f1f2f4] p-3 shadow-sm max-h-[calc(100vh-8rem)]">
       <ColumnHeader
         title={title}
         onRename={(newTitle) => onRename(id, newTitle)}
-        onDelete={() => onDeleteList(id)}
         onAddCard={() => setIsAdding(true)}
         listId={id}
+        dragHandleProps={dragHandleProps}
       />
       <Droppable
         droppableId={id.toString()}
@@ -76,7 +78,7 @@ export default function BoardList({
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
-            className={`mt-2 flex flex-col overflow-y-auto flex-1 pb-2 min-h-[50px] transition-colors duration-200 ${
+            className={`mt-2 flex min-h-[50px] flex-1 flex-col gap-3 overflow-y-auto pb-2 transition-colors duration-200 ${
               snapshot.isDraggingOver ? "bg-gray-200/50 rounded-lg" : ""
             }`}
           >

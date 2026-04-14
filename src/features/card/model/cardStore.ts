@@ -47,6 +47,8 @@ type CardState = {
     toBoardId: number,
     toListId: number,
     newIndex: number,
+    boardVersion: number,
+    targetBoardVersion?: number,
   ) => Promise<void>;
   addMember: (cardId: number, userId: number) => Promise<void>;
   removeMember: (cardId: number, userId: number) => Promise<void>;
@@ -84,6 +86,7 @@ export const useCardStore = create<CardState>((set, get) => ({
     const tempId = Date.now();
     const tempCard: Card = {
       id: tempId,
+      version: 0,
       list_id: listId,
       title,
       position: 9999,
@@ -112,12 +115,18 @@ export const useCardStore = create<CardState>((set, get) => ({
 
   updateCardDetail: async (cardId, data) => {
     const previousCards = get().cards;
+    const currentCard = previousCards.find((card) => card.id === cardId);
+    if (!currentCard) return;
+
     set((state) => ({
       cards: state.cards.map((c) => (c.id === cardId ? { ...c, ...data } : c)),
     }));
 
     try {
-      await updateCard(cardId, data);
+      await updateCard(cardId, {
+        version: currentCard.version,
+        ...data,
+      });
     } catch (error) {
       set({ cards: previousCards });
       throw error;
@@ -188,13 +197,27 @@ export const useCardStore = create<CardState>((set, get) => ({
     }
   },
 
-  moveCard: async (cardId, toBoardId, toListId, newIndex) => {
+  moveCard: async (
+    cardId,
+    toBoardId,
+    toListId,
+    newIndex,
+    boardVersion,
+    targetBoardVersion,
+  ) => {
     if (!cardId) return;
 
     try {
       set({ loading: true });
 
-      await moveCard(cardId, toBoardId, toListId, newIndex);
+      await moveCard(
+        cardId,
+        toBoardId,
+        toListId,
+        newIndex,
+        boardVersion,
+        targetBoardVersion,
+      );
 
       set({ loading: false });
     } catch (error) {

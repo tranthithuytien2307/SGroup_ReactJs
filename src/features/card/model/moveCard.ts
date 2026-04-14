@@ -5,10 +5,26 @@ export const moveCard = async (
   toBoardId: number,
   toListId: number,
   newIndex: number,
+  boardVersion: number,
+  targetBoardVersion?: number,
 ) => {
-  if (!id || !toBoardId || !toListId || newIndex === undefined) return;
+  if (
+    !id ||
+    !toBoardId ||
+    !toListId ||
+    newIndex === undefined ||
+    boardVersion === undefined
+  )
+    return;
   try {
-    await cardAPI.moveCard(id, toBoardId, toListId, newIndex);
+    await cardAPI.moveCard(
+      id,
+      toBoardId,
+      toListId,
+      newIndex,
+      boardVersion,
+      targetBoardVersion,
+    );
   } catch (error) {
     console.error(`Error moving card ${id}: `, error);
     throw error;

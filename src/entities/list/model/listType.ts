@@ -2,6 +2,7 @@ import type { Card } from "../../card/model/cardType";
 
 export type List = {
   id: number;
+  version: number;
   board_id: number;
   name: string;
   position: number;

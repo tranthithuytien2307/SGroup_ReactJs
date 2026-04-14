@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import BoardList from "../widgets/board/BoardList";
 import BoardHeader from "../widgets/board/BoardHeader";
 import InviteModal from "../widgets/board/inviteMember/InviteModal";
@@ -12,15 +12,10 @@ import type { Board } from "../entities/board/model/boardType";
 import { getListByBoardId } from "../features/list/model/getListByBoardId";
 import type { List } from "../entities/list/model/listType";
 import { changeBoardName } from "../features/board/model/changeBoardName";
-import { Plus } from "lucide-react";
 import { renameList } from "../features/list/model/renameList";
-import { createCard } from "../features/card/model/createCard";
-import type { Card } from "../entities/card/model/cardType";
 import AddItemForm from "../shared/ui/AddItemForm";
 import { createList } from "../features/list/model/createList";
 import { deleteList } from "../features/list/model/deleteList";
-import { updateCard } from "../features/card/model/updateCard";
-import { deleteCrad } from "../features/card/model/deleteCard";
 import { getBoardMember } from "../features/board/model/getBoardMember";
 import type {
   BoardMember,
@@ -36,6 +31,7 @@ import {
 } from "@hello-pangea/dnd";
 import { useBoardStore } from "../features/board/model/boardStore";
 import { useListStore } from "../features/list/model/listStore";
+import { socket } from "../shared/lib/socket";
 
 export default function BoardPage() {
   const { id } = useParams();
@@ -59,31 +55,49 @@ export default function BoardPage() {
   const lists = useListStore((state) => state.lists);
   const setLists = useListStore((state) => state.setLists);
   const moveListStore = useListStore((state) => state.moveList);
+  const currentBoard = useBoardStore((state) => state.currentBoard);
+  const setCurrentBoard = useBoardStore((state) => state.setCurrentBoard);
+
+  const applyBoardState = (boardData: Board, listData: List[]) => {
+    const normalizedLists: List[] = listData.map((list: List) => ({
+      ...list,
+      cards: Array.isArray(list.cards) ? list.cards : [],
+    }));
+
+    setLists(normalizedLists);
+    setBoard(boardData);
+    setCurrentBoard(boardData);
+  };
+
+  const refreshBoardState = async () => {
+    if (!boardId) return;
+
+    const [boardData, listData, members] = await Promise.all([
+      getBoardById(boardId),
+      getListByBoardId(boardId),
+      getBoardMember(boardId),
+    ]);
+
+    if (!boardData || !listData) return;
+
+    setBoardMember(members || []);
+    applyBoardState(boardData, listData);
+  };
+
   useEffect(() => {
-    const fetchLink = async () => {
-      if (!boardId) return;
-      const boardData = await getBoardById(boardId);
-      const listData = await getListByBoardId(boardId);
-      const members = await getBoardMember(boardId);
-      setBoardMember(members);
-
-      const normalizedLists: List[] = listData.map((list: List) => ({
-        ...list,
-        Cards: Array.isArray(list.cards) ? list.cards : [],
-      }));
-
-      setLists(normalizedLists);
-
-      setBoard(boardData);
-      setCurrentBoard(boardData);
-    };
-
-    fetchLink();
+    void refreshBoardState();
   }, [boardId]);
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
+    const boardVersion = currentBoard?.version ?? board?.version;
 
     if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
 
     if (type === "LIST") {
       const listId = parseInt(draggableId);
@@ -102,63 +116,96 @@ export default function BoardPage() {
       setLists(updatedLists);
 
       try {
-        if (board?.id) {
-          await moveListStore(listId, board.id, destination.index);
+        if (board?.id && boardVersion !== undefined) {
+          await moveListStore(
+            listId,
+            board.id,
+            destination.index,
+            boardVersion,
+          );
         }
       } catch (error) {
         console.error("Rollback LIST");
         setLists(oldLists);
+        await refreshBoardState();
       }
 
       return;
     }
 
     const cardId = parseInt(draggableId);
+    const sourceListId = parseInt(source.droppableId);
     const toListId = parseInt(destination.droppableId);
 
     const oldCards = [...cards];
-    const newCards = [...cards];
+    const movedCard = oldCards.find((card) => card.id === cardId);
+    if (!movedCard) return;
 
-    const movedIndex = newCards.findIndex((c) => c.id === cardId);
-    if (movedIndex === -1) return;
+    const sourceCards = oldCards
+      .filter((card) => card.list_id === sourceListId)
+      .sort((a, b) => a.position - b.position);
 
-    const [movedCard] = newCards.splice(movedIndex, 1);
+    const targetCards =
+      sourceListId === toListId
+        ? sourceCards
+        : oldCards
+            .filter((card) => card.list_id === toListId)
+            .sort((a, b) => a.position - b.position);
 
-    movedCard.list_id = toListId;
+    const nextSourceCards = sourceCards.filter((card) => card.id !== cardId);
+    const nextTargetCards =
+      sourceListId === toListId ? nextSourceCards : [...targetCards];
 
-    const targetCards = newCards.filter((c) => c.list_id === toListId);
+    const movedCardNext = { ...movedCard, list_id: toListId };
+    nextTargetCards.splice(destination.index, 0, movedCardNext);
 
-    targetCards.splice(destination.index, 0, movedCard);
+    const reindexedSourceCards =
+      sourceListId === toListId
+        ? nextTargetCards.map((card, index) => ({
+            ...card,
+            position: (index + 1) * 100,
+          }))
+        : nextSourceCards.map((card, index) => ({
+            ...card,
+            position: (index + 1) * 100,
+          }));
 
-    targetCards.forEach((c, index) => {
-      c.position = (index + 1) * 100;
-    });
+    const reindexedTargetCards =
+      sourceListId === toListId
+        ? reindexedSourceCards
+        : nextTargetCards.map((card, index) => ({
+            ...card,
+            position: (index + 1) * 100,
+          }));
 
-    const updatedCards = newCards.map((c) => {
-      if (c.list_id === toListId) {
-        return targetCards.find((t) => t.id === c.id) || c;
-      }
-      return c;
-    });
-
-    if (!updatedCards.find((c) => c.id === movedCard.id)) {
-      updatedCards.push(movedCard);
-    }
+    const updatedCards = oldCards
+      .filter(
+        (card) =>
+          card.list_id !== sourceListId &&
+          card.list_id !== toListId &&
+          card.id !== cardId,
+      )
+      .concat(reindexedSourceCards)
+      .concat(sourceListId === toListId ? [] : reindexedTargetCards);
 
     setCards(updatedCards);
 
     try {
-      if (board?.id) {
-        await moveCardStore(cardId, board.id, toListId, destination.index);
+      if (board?.id && boardVersion !== undefined) {
+        await moveCardStore(
+          cardId,
+          board.id,
+          toListId,
+          destination.index,
+          boardVersion,
+        );
       }
     } catch (error) {
       console.error("Rollback CARD");
       setCards(oldCards);
+      await refreshBoardState();
     }
   };
-
-  const currentBoard = useBoardStore((state) => state.currentBoard);
-  const setCurrentBoard = useBoardStore((state) => state.setCurrentBoard);
 
   const backgroundStyle = currentBoard?.cover_url
     ? {
@@ -171,6 +218,36 @@ export default function BoardPage() {
           background: currentBoard.theme,
         }
       : { backgroundColor: "#f1f2f4" };
+
+  useEffect(() => {
+    if (!boardId) return;
+
+    const handleBoardStateUpdated = (payload: {
+      boardId: number;
+      boardVersion: number;
+      lists: List[];
+    }) => {
+      if (payload.boardId !== boardId) return;
+
+      const nextBoard = {
+        ...(useBoardStore.getState().currentBoard ?? board ?? { id: boardId }),
+        version: payload.boardVersion,
+      } as Board;
+
+      setBoard(nextBoard);
+      setCurrentBoard(nextBoard);
+      setLists(payload.lists);
+      setCards(payload.lists.flatMap((list) => list.cards || []));
+    };
+
+    socket.emit("join-board", boardId);
+    socket.on("board:state-updated", handleBoardStateUpdated);
+
+    return () => {
+      socket.emit("leave-board", boardId);
+      socket.off("board:state-updated", handleBoardStateUpdated);
+    };
+  }, [boardId, board, setCards, setLists, setCurrentBoard]);
 
   useEffect(() => {
     const allCards = lists.flatMap((list) => list.cards || []);
@@ -212,6 +289,8 @@ export default function BoardPage() {
 
   const onrenameList = async (listId: number, newTitle: string) => {
     const prevLists = lists;
+    const currentList = prevLists.find((list) => list.id === listId);
+    if (!currentList) return;
 
     const updated = prevLists.map((list) =>
       list.id === listId ? { ...list, name: newTitle } : list,
@@ -220,17 +299,12 @@ export default function BoardPage() {
     setLists(updated);
 
     try {
-      await renameList(listId, newTitle);
+      await renameList(listId, newTitle, currentList.version);
     } catch (error) {
       setLists(prevLists);
       console.error("Failed to rename list: ", error);
+      await refreshBoardState();
     }
-  };
-
-  const hanldeGetLink = async () => {
-    if (!boardId) return;
-    const link = await linkShareInvite(boardId);
-    setShareLink(link);
   };
 
   const handleSendInvitation = async (email: string) => {
@@ -284,6 +358,7 @@ export default function BoardPage() {
 
     const tempList: List = {
       id: Date.now(),
+      version: 0,
       board_id: boardId,
       name,
       position: prevLists.length + 1,
@@ -370,7 +445,7 @@ export default function BoardPage() {
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className="
-                flex items-start gap-4 p-4
+                flex items-start p-4
                 h-full
                 overflow-x-auto overflow-y-hidden
               "
@@ -385,21 +460,20 @@ export default function BoardPage() {
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
-                        className="flex-shrink-0"
+                        className="w-72 flex-shrink-0 pr-4"
                       >
-                        <div {...provided.dragHandleProps}>
-                          <BoardList
-                            boardId={boardId}
-                            id={list.id}
-                            title={list.name}
-                            cards={Array.isArray(list.cards) ? list.cards : []}
-                            onRename={onrenameList}
-                            onAddCard={onAddCard}
-                            onDeleteList={onDeleteList}
-                            onUpdateCard={onUpdateCard}
-                            onDeleteCard={onDeleteCard}
-                          />
-                        </div>
+                        <BoardList
+                          boardId={boardId}
+                          id={list.id}
+                          title={list.name}
+                          cards={Array.isArray(list.cards) ? list.cards : []}
+                          onRename={onrenameList}
+                          onAddCard={onAddCard}
+                          onDeleteList={onDeleteList}
+                          onUpdateCard={onUpdateCard}
+                          onDeleteCard={onDeleteCard}
+                          dragHandleProps={provided.dragHandleProps}
+                        />
                       </div>
                     )}
                   </Draggable>

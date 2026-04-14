@@ -2,7 +2,7 @@ import { cardAPI } from "../../../entities/card/api/cardAPI";
 
 export const updateCard = async (
   cardId: number,
-  data: { title?: string; description?: string },
+  data: { version: number; title?: string; description?: string },
 ) => {
   if (!cardId) return;
 

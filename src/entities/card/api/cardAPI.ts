@@ -9,7 +9,7 @@ export const cardAPI = {
   },
   updateCard: (
     cardId: number,
-    data: { title?: string; description?: string },
+    data: { version: number; title?: string; description?: string },
   ) => {
     return api.put(`/card/${cardId}`, data);
   },
@@ -35,8 +35,18 @@ export const cardAPI = {
     toBoardId: number,
     toListId: number,
     newIndex: number,
+    boardVersion: number,
+    targetBoardVersion?: number,
   ) => {
-    return api.patch(`/card/${id}/move`, { toBoardId, toListId, newIndex });
+    return api.patch(`/card/${id}/move`, {
+      toBoardId,
+      toListId,
+      newIndex,
+      board_version: boardVersion,
+      ...(targetBoardVersion !== undefined && {
+        target_board_version: targetBoardVersion,
+      }),
+    });
   },
   addMember: (cardId: number, userId: number) => {
     return api.post(`/card/${cardId}/member`, {

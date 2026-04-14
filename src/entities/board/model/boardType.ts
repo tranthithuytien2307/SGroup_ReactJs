@@ -1,5 +1,6 @@
 export type Board = {
   id: number;
+  version: number;
   name: string;
   description?: string;
   memberCount?: number;

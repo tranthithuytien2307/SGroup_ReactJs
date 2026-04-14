@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
+import { GripVertical } from "lucide-react";
 import CopyListModal from "../list/CopyListModal";
 import MoveListModal from "../list/MoveListModal";
 import { useListStore } from "../../features/list/model/listStore";
@@ -6,17 +8,17 @@ import { useListStore } from "../../features/list/model/listStore";
 type ColumnHeaderProps = {
   title: string;
   onRename: (newTitle: string) => void;
-  onDelete?: () => void;
   onAddCard?: () => void;
   listId: number;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
 };
 
 export default function ColumnHeader({
   title,
   onRename,
-  onDelete,
   onAddCard,
   listId,
+  dragHandleProps,
 }: ColumnHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -72,6 +74,16 @@ export default function ColumnHeader({
 
   return (
     <div className="relative flex items-center justify-between gap-2 px-2 py-1 min-w-0">
+      <button
+        type="button"
+        {...dragHandleProps}
+        onClick={(e) => e.stopPropagation()}
+        className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700 cursor-grab active:cursor-grabbing"
+        aria-label="Drag list"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+
       {isEditing ? (
         <input
           ref={inputRef}
