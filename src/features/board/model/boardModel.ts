@@ -4,13 +4,19 @@ import type { Workspace } from "../../../entities/workspace/model/workspaceType"
 export const updateBoardInModel = async (
   setWorkspace: React.Dispatch<React.SetStateAction<Workspace | null>>,
   boardId: number,
-  data: { name: string; description?: string; cover_url?: string },
+  data: {
+    name: string;
+    description?: string;
+    cover_url?: string;
+    theme?: string;
+  },
 ) => {
   try {
     await boardAPI.updateBoard({
       name: data.name,
       description: data.description ?? "",
       cover_url: data.cover_url ?? "",
+      theme: data.theme ?? "",
       boardId,
     });
 

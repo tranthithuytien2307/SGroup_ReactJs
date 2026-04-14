@@ -11,6 +11,10 @@ import { getBoardById } from "./getBoardById";
 import { updateBoardVisibility } from "./updateBoardVisibility";
 import { getBoardArchived } from "./getBoardArchived";
 import { getBoardByUser } from "./getBoardByUser";
+import { archiveBoard } from "./archiveBoard";
+import { unarchiveBoard } from "./unarchiveBoard";
+import { getBoardsByWorkspaceId } from "./getBoardByWorkspaceId";
+import { deleteBoard } from "./deleteBoard";
 
 type Visibility = "private" | "workspace" | "public";
 
@@ -24,6 +28,8 @@ type BoardState = {
     cards: any[];
   };
   boards: Board[];
+
+  setBoards: (boards: Board[] | ((prev: Board[]) => Board[])) => void;
 
   setCurrentBoard: (board: Board) => void;
 
@@ -47,6 +53,10 @@ type BoardState = {
   ) => Promise<void>;
 
   getBoardsByUser: () => Promise<void>;
+  archiveBoard: (boardId: number) => Promise<void>;
+  unarchiveBoard: (boardId: number) => Promise<void>;
+  getBoardsByWorkspace: (workspaceId: number) => Promise<void>;
+  deleteBoard: (boardId: number) => Promise<void>;
 };
 
 export const useBoardStore = create<BoardState>((set, get) => ({
@@ -76,6 +86,11 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       set({ loading: false });
     }
   },
+
+  setBoards: (boards) =>
+    set((state) => ({
+      boards: typeof boards === "function" ? boards(state.boards) : boards,
+    })),
 
   setCurrentBoard: (board) => set({ currentBoard: board }),
 
@@ -225,7 +240,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     const previousBoard = get().currentBoard;
     set({ loading: true });
 
-
     if (previousBoard) {
       set({
         currentBoard: {
@@ -243,7 +257,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       set({ loading: false });
     } catch (error) {
       console.error("Failed to update theme in store:", error);
-      set({ currentBoard: previousBoard, loading: false }); 
+      set({ currentBoard: previousBoard, loading: false });
       throw error;
     }
   },
@@ -254,5 +268,70 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         ? { ...state.currentBoard, name: newName }
         : null,
     }));
+  },
+
+  archiveBoard: async (boardId) => {
+    if (!boardId) return;
+
+    const previousBoards = get().boards;
+    const previousCurrent = get().currentBoard;
+
+    set({
+      boards: previousBoards.filter((b) => b.id !== boardId),
+      currentBoard: previousCurrent?.id === boardId ? null : previousCurrent,
+    });
+
+    try {
+      await archiveBoard(boardId);
+    } catch (error) {
+      set({
+        boards: previousBoards,
+        currentBoard: previousCurrent,
+      });
+
+      console.error("Failed to archive board:", error);
+      throw error;
+    }
+  },
+
+  unarchiveBoard: async (boardId) => {
+    if (!boardId) return;
+
+    try {
+      const restoredBoard = await unarchiveBoard(boardId);
+
+      set((state) => ({
+        boards: [...state.boards, restoredBoard],
+      }));
+    } catch (error) {
+      console.error("Failed to unarchive board:", error);
+      throw error;
+    }
+  },
+
+  getBoardsByWorkspace: async (workspaceId: number) => {
+    try {
+      const boards = await getBoardsByWorkspaceId(workspaceId);
+      set({ boards: boards || [] });
+    } catch (error) {
+      console.error("Fetch boards failed", error);
+    }
+  },
+  deleteBoard: async (boardId: number) => {
+    if (!boardId) return;
+
+    const previousBoards = get().boards;
+    set({
+      boards: previousBoards.filter((b) => b.id !== boardId),
+    });
+
+    try {
+      await deleteBoard(boardId);
+    } catch (error) {
+      set({ boards: previousBoards });
+
+      console.error("Failed to delete board:", error);
+      throw error;
+    }
   },
 }));

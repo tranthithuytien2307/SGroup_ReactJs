@@ -20,27 +20,29 @@ import type { Board } from "../../entities/board/model/boardType";
 import { useNavigate } from "react-router-dom";
 import { PATH } from "../../shared/config/PATH";
 import { getBoardsByWorkspaceId } from "../../features/board/model/getBoardByWorkspaceId";
+import toast from "react-hot-toast";
+import { useBoardStore } from "../../features/board/model/boardStore";
 
 type BoardCardProps = {
   workspace_id: number;
 };
 
 export default function BoardCard({ workspace_id }: BoardCardProps) {
-  const { workspace, updateBoard, archiveBoard, deleteBoard } = useWorkspace();
+  const { workspace, updateBoard } = useWorkspace();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
-  const [boards, setBoards] = useState<Board[]>([]);
   const navigate = useNavigate();
+  const boards = useBoardStore((state) => state.boards);
+  const setBoards = useBoardStore((state) => state.setBoards);
+  const getBoardsByWorkspace = useBoardStore(
+    (state) => state.getBoardsByWorkspace,
+  );
+  const archiveBoardStore = useBoardStore((state) => state.archiveBoard);
+  const deleteBoardStore = useBoardStore((state) => state.deleteBoard);
 
   useEffect(() => {
     if (!workspace?.id) return;
-
-    const fetchBoards = async () => {
-      const boardsData = await getBoardsByWorkspaceId(workspace.id);
-      setBoards(boardsData);
-    };
-
-    fetchBoards();
+    getBoardsByWorkspace(workspace.id);
   }, [workspace?.id]);
 
   const handleEdit = (board: Board) => {
@@ -51,10 +53,34 @@ export default function BoardCard({ workspace_id }: BoardCardProps) {
   const handleEditSave = async (data: {
     name: string;
     description?: string;
+    cover_url?: string;
+    theme?: string;
   }) => {
     if (!selectedBoard) return;
-    await updateBoard(selectedBoard.id, data);
-    setEditModalOpen(false);
+
+    try {
+      await updateBoard(selectedBoard.id, {
+        ...data,
+        cover_url: undefined,
+        theme: undefined,
+      });
+
+      setBoards((prev) =>
+        prev.map((b) =>
+          b.id === selectedBoard.id
+            ? { ...b, name: data.name, description: data.description }
+            : b,
+        ),
+      );
+
+      toast.success("Board updated successfully");
+      setEditModalOpen(false);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || error?.message || "Update failed";
+
+      toast.error(message);
+    }
   };
 
   const handleOnBoardDetail = (id: number) => {
@@ -62,17 +88,30 @@ export default function BoardCard({ workspace_id }: BoardCardProps) {
   };
 
   const handleArchive = async (board: Board) => {
-    if (
-      confirm(`Are you sure you want to archive the board "${board.name}"?`)
-    ) {
-      await archiveBoard(board.id);
+    if (!confirm(`Archive "${board.name}"?`)) return;
+
+    try {
+      await archiveBoardStore(board.id);
+
+      setBoards((prev) => prev.filter((b) => b.id !== board.id));
+
+      toast.success("Board archived successfully");
+    } catch (error) {
+      toast.error("Failed to archive board");
     }
   };
 
-  const handleDelete = async (board: any) => {
-    await deleteBoard(board.id);
-  };
+  const handleDelete = async (board: Board) => {
+    if (!confirm(`Delete "${board.name}"?`)) return;
 
+    try {
+      await deleteBoardStore(board.id);
+
+      toast.success("Board deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete board");
+    }
+  };
   const modalEditTexts = {
     title: "Edit Board",
     description: "what Do You Want To Change?",
@@ -87,7 +126,7 @@ export default function BoardCard({ workspace_id }: BoardCardProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {boards.map((board: Board) => (
-        <div key={board.id} onClick={() => handleOnBoardDetail(board.id)}>
+        <div key={board.id}>
           <div
             className="
           group relative
@@ -105,52 +144,100 @@ export default function BoardCard({ workspace_id }: BoardCardProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
+                  onClick={(e) => e.stopPropagation()}
                   className="
-                absolute top-2 right-2 
-                opacity-0 group-hover:opacity-100
-                pointer-events-none group-hover:pointer-events-auto
-                p-2 hover:bg-gray-100 rounded-md
-                transition
-              "
+                    absolute top-2 right-2 
+                    opacity-0 group-hover:opacity-100
+                    pointer-events-none group-hover:pointer-events-auto
+                    p-2 rounded-md
+                    hover:bg-gray-100
+                    transition
+                  "
                 >
                   <Ellipsis className="w-5 h-5 text-gray-500" />
                 </button>
               </DropdownMenuTrigger>
+
               <DropdownMenuPortal>
                 <DropdownMenuContent
                   side="bottom"
                   align="end"
-                  sideOffset={6}
-                  className="z-50 w-40"
+                  sideOffset={8}
+                  className="
+                    z-50 w-48
+                    rounded-xl
+                    border border-gray-200
+                    bg-white
+                    shadow-lg
+                    p-1.5
+                  "
                 >
                   <DropdownMenuItem
-                    onSelect={() => handleEdit(board)}
-                    className="flex items-center gap-2"
+                    onSelect={(e) => {
+                      e.stopPropagation();
+                      handleEdit(board);
+                    }}
+                    className="
+                      flex items-center gap-3
+                      px-3 py-2
+                      rounded-md
+                      cursor-pointer
+                      text-sm text-gray-700
+                      hover:bg-gray-100
+                      transition
+                    "
                   >
-                    <SquarePen className="h-4 w-4" />
-                    Edit Board
+                    <SquarePen className="h-4 w-4 text-gray-500" />
+                    <span>Edit Board</span>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
-                    onSelect={() => handleArchive(board)}
-                    className="flex items-center gap-2"
+                    onSelect={(e) => {
+                      e.stopPropagation();
+                      handleArchive(board);
+                    }}
+                    className="
+                      flex items-center gap-3
+                      px-3 py-2
+                      rounded-md
+                      cursor-pointer
+                      text-sm text-gray-700
+                      hover:bg-gray-100
+                      transition
+                    "
                   >
-                    <Archive className="h-4 w-4" />
-                    Archive Board
+                    <Archive className="h-4 w-4 text-gray-500" />
+                    <span>Archive Board</span>
                   </DropdownMenuItem>
 
+                  <div className="my-1 border-t border-gray-200" />
+
                   <DropdownMenuItem
-                    onSelect={() => handleDelete(board)}
-                    className="flex items-center gap-2 text-red-500"
+                    onSelect={(e) => {
+                      e.stopPropagation();
+                      handleDelete(board);
+                    }}
+                    className="
+                      flex items-center gap-3
+                      px-3 py-2
+                      rounded-md
+                      cursor-pointer
+                      text-sm text-red-600
+                      hover:bg-red-50
+                      transition
+                    "
                   >
                     <Trash className="h-4 w-4" />
-                    Delete Board
+                    <span>Delete Board</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenuPortal>
             </DropdownMenu>
 
-            <div className="flex flex-col gap-3">
+            <div
+              className="flex flex-col gap-3 cursor-pointer"
+              onClick={() => handleOnBoardDetail(board.id)}
+            >
               <div className="flex gap-2 items-start">
                 <Kanban className="h-4 w-4 mt-1 shrink-0" />
                 <h3 className="font-medium text-gray-800 line-clamp-2 break-words">
@@ -163,7 +250,10 @@ export default function BoardCard({ workspace_id }: BoardCardProps) {
               </p>
             </div>
 
-            <div className="flex justify-between text-sm text-gray-600 mt-4">
+            <div
+              onClick={() => handleOnBoardDetail(board.id)}
+              className="flex justify-between text-sm text-gray-600 mt-4"
+            >
               <p>
                 {board.listCount === 1
                   ? `${board.listCount} list`

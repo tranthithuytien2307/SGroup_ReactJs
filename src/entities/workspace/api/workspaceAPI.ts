@@ -44,4 +44,20 @@ export const workspaceAPI = {
   getMembers: (workspace_id: number) => {
     return api.get(`/workspace-member/${workspace_id}/members`);
   },
+
+  getBoardsArchiveByWorkspaceId: (workspace_id: number) => {
+    return api.get(`/workspace/${workspace_id}/boards/archived`);
+  },
+
+  archiveWorkspace: (workspace_id: number) => {
+    return api.patch(`/workspace/${workspace_id}/archive`);
+  },
+
+  unarchiveWorkspace: (workspace_id: number) => {
+    return api.patch(`/workspace/${workspace_id}/unarchive`);
+  },
+
+  getWorkspaceArchive: () => {
+    return api.get(`/workspace/archived`);
+  },
 };

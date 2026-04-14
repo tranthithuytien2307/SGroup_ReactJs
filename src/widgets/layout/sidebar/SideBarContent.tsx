@@ -1,13 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import LoadingSpinner from "../../../shared/ui/LoadingSpinner";
-import { ChevronDown, ChevronRight, LayoutGrid, LayoutTemplate } from "lucide-react";
+import { ChevronDown, ChevronRight, LayoutGrid, LayoutTemplate, Archive  } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PATH } from "../../../shared/config/PATH";
+import ArchivedBoardsModal from "../../workspace/ArchivedBoardsModal";
+import { useWorkspaceStore } from "../../../features/workspace/model/workspaceStore";
+import { useSelectedWorkspace } from "../../../features/workspace/SelectedWorkspaceContext";
+import toast from "react-hot-toast";
 
 interface Board {
   id: number;
   name: string;
 }
+
 interface Props {
   boards: Board[];
 }
@@ -15,11 +20,17 @@ interface Props {
 export default function SideBarContent({ boards }: Props) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [openArchiveModal, setOpenArchiveModal] = useState(false);
+
   const { id } = useParams();
   const activeBoardId = Number(id);
   const location = useLocation();
+
+  const { selected } = useSelectedWorkspace();
+
+  const { archivedBoards, loadingArchive, getBoardArchiveByWorkspaceId } =
+    useWorkspaceStore();
+
   const isDashboardActive =
     location.pathname === PATH.DASHBOARD ||
     location.pathname.endsWith(PATH.DASHBOARD);
@@ -37,15 +48,34 @@ export default function SideBarContent({ boards }: Props) {
   };
 
   const isTemplatesActive = location.pathname === PATH.TEMPLATES;
+  const handleOpenArchive = async () => {
+    if (!selected?.id) return;
+
+    try {
+      setOpenArchiveModal(true);
+
+      await getBoardArchiveByWorkspaceId(selected.id);
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Failed to load archived boards ❌",
+      );
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 p-2">
       <div>
         <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
           Navigation
         </p>
+
         <button
-          className={`flex items-center gap-2 text-sm font-medium px-2 py-1.5 rounded-md w-full cursor-pointer ${isDashboardActive ? "bg-gray-200 text-gray-900" : "hover:bg-gray-100 text-gray-700"}`}
-          onClick={() => handleOnDashboard()}
+          className={`flex items-center gap-2 text-sm font-medium bg-muted px-2 py-1.5 rounded-md w-full cursor-pointer ${
+            isDashboardActive
+              ? "bg-gray-200 text-gray-900"
+              : "hover:bg-gray-100 text-gray-700"
+          }`}
+          onClick={handleOnDashboard}
         >
           <LayoutGrid className="w-4 h-4" />
           Dashboard
@@ -64,47 +94,64 @@ export default function SideBarContent({ boards }: Props) {
           Boards
         </p>
 
-        <button
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-2 text-sm font-medium px-2 py-1.5 rounded-md hover:bg-muted w-full transition-colors"
-        >
-          {open ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-          All Boards
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setOpen(!open)}
+            className="flex items-center gap-2 text-sm font-medium px-2 py-1.5 rounded-md hover:bg-muted w-full transition-colors"
+          >
+            {open ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+            All Boards
+          </button>
+
+          <button
+            onClick={handleOpenArchive}
+            className="p-1.5 rounded-md hover:bg-gray-100 transition"
+          >
+            <Archive className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
 
         {open && (
           <div className="ml-6 mt-1 flex flex-col gap-1">
-            {loading && <LoadingSpinner />}
-            {error && <p className="text-xs text-red-500 italic">{error}</p>}
-            {!loading && !error && boards.length === 0 && (
+            {boards.length === 0 && (
               <p className="text-xs text-muted-foreground italic">
                 Chưa có board nào
               </p>
             )}
-            {Array.isArray(boards) &&
-              boards.map((board) => {
-                const isActive = board.id === activeBoardId;
 
-                return (
-                  <button
-                    key={board.id}
-                    onClick={() => handleBoardDetail(board.id)}
-                    className={`
-          text-sm px-2 py-1 rounded-md text-left transition-colors cursor-pointer
-          ${isActive ? "bg-gray-200 font-medium" : "hover:bg-gray-100"}
-        `}
-                  >
-                    {board.name}
-                  </button>
-                );
-              })}
+            {boards.map((board) => {
+              const isActive = board.id === activeBoardId;
+
+              return (
+                <button
+                  key={board.id}
+                  onClick={() => handleBoardDetail(board.id)}
+                  className={`
+                    text-sm px-2 py-1 rounded-md text-left transition-colors cursor-pointer
+                    ${
+                      isActive ? "bg-gray-200 font-medium" : "hover:bg-gray-100"
+                    }
+                  `}
+                >
+                  {board.name}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
+
+      <ArchivedBoardsModal
+        open={openArchiveModal}
+        onClose={() => setOpenArchiveModal(false)}
+        boards={archivedBoards}
+        loading={loadingArchive}
+        onOpenBoard={handleBoardDetail}
+      />
     </div>
   );
 }
