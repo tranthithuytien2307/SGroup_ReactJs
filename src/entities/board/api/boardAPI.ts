@@ -1,4 +1,5 @@
 import api from "../../../shared/lib/axiosInstance";
+import { uploadWithPresignedUrl } from "../../../shared/lib/uploadWithPresignedUrl";
 
 export interface CreateBoardPayload {
   name: string;
@@ -77,25 +78,27 @@ export const boardAPI = {
     return api.patch(`/board/unarchive/${id}`);
   },
 
+  createBackgroundUploadUrl: (boardId: number, file: File) => {
+    return api.post(`/board/${boardId}/background/presign`, {
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+    });
+  },
+
   updateBackground: (
     boardId: number,
-    data: { file?: File; theme?: string },
+    data: { cover_url?: string | null; theme?: string | null },
   ) => {
-    const formData = new FormData();
+    return api.put(`/board/${boardId}/background`, data);
+  },
 
-    if (data.file) {
-      formData.append("background", data.file);
-    }
+  uploadBackgroundFile: async (boardId: number, file: File) => {
+    const presignRes = await boardAPI.createBackgroundUploadUrl(boardId, file);
+    const { uploadUrl, fileUrl } = presignRes.data.responseObject;
 
-    if (data.theme) {
-      formData.append("theme", data.theme);
-    }
+    await uploadWithPresignedUrl(uploadUrl, file);
 
-    return api.put(`/board/${boardId}/background`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    return boardAPI.updateBackground(boardId, { cover_url: fileUrl, theme: null });
   },
 
   getBoardCreator: (boardId: number) => {
