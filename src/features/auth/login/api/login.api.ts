@@ -7,4 +7,7 @@ export const loginApi = {
   exchangeCode: ({ code }: { code: string }) => {
     return api.post("/auth/google/login", { code });
   },
+  logout: ({ refreshToken }: { refreshToken: string }) => {
+    return api.post("/auth/logout", { refreshToken });
+  },
 };

@@ -5,12 +5,13 @@ export function useProfile() {
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
-  const updateProfile = async (name: string, email: string) => {
+  const updateProfile = async (name: string, email: string, bio?: string) => {
     try {
       setLoading(true);
-      await userAPI.updateProfile({ name, email });
+      await userAPI.updateProfile({ name, email, bio: bio ?? "" });
     } catch (err: any) {
       alert(err?.response?.data?.message || "Update failed");
+      throw err;
     } finally {
       setLoading(false);
     }

@@ -8,30 +8,14 @@ import { useSelectedWorkspace } from "../../../features/workspace/SelectedWorksp
 import { useWorkspace } from "../../../features/workspace/WorkspaceContext";
 import { useNavigate } from "react-router-dom";
 import { PATH } from "../../../shared/config/PATH";
-import { getInformationUser } from "../../../features/auth/informationUser/model/getInformationUser";
-
-interface UserType {
-  id: number;
-  name: string;
-  email: string;
-  avatar_url: string | null;
-  role: {
-    id: number;
-    name: "admin" | "staff" | "user";
-    description?: string;
-  };
-}
+import { useAuthStore } from "../../../entities/auth/model/auth.store";
 
 export default function SideBar() {
-  const [dataUser, setDataUser] = useState<UserType | null>(null);
+  const user = useAuthStore((state) => state.user);
   const [boards, setBoards] = useState<Board[]>([]);
   const { selected, setSelected } = useSelectedWorkspace();
   const { workspaces } = useWorkspace();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    getInformationUser(setDataUser);
-  }, []);
 
   useEffect(() => {
     console.log("Workspaces updated in SideBar:", workspaces);
@@ -71,7 +55,7 @@ export default function SideBar() {
         />
         <SideBarContent boards={boards} />
       </div>
-      <SideBarFooter user={dataUser} />
+      <SideBarFooter user={user as any} />
     </div>
   );
 }

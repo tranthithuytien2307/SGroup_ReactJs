@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { User } from "../../users/type/types";
 import { userAPI } from "../../../entities/users/api/userAPI";
+import { loginApi } from "../../../features/auth/login/api/login.api";
 
 interface AuthState {
   accessToken: string | null;
@@ -9,6 +10,7 @@ interface AuthState {
 
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearTokens: () => void;
+  logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
 }
 
@@ -32,6 +34,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem("user");
 
     set({ accessToken: null, refreshToken: null, user: null });
+  },
+
+  logout: async () => {
+    const refreshToken = useAuthStore.getState().refreshToken;
+
+    try {
+      if (refreshToken) {
+        await loginApi.logout({ refreshToken });
+      }
+    } finally {
+      useAuthStore.getState().clearTokens();
+    }
   },
 
   fetchUser: async () => {
