@@ -4,6 +4,9 @@ import BoardCard from "./BoardCard";
 import GenericFormModal from "../../shared/ui/modal/GenericFormModal";
 import { useState } from "react";
 import { useWorkspace } from "../../features/workspace/WorkspaceContext";
+import { getBoardsByWorkspaceId } from "../../features/board/model/getBoardByWorkspaceId";
+import type { Board } from "../../entities/board/model/boardType";
+import { useBoardStore } from "../../features/board/model/boardStore";
 
 type WorkspaceSectionProps = {
   id: number;
@@ -24,6 +27,8 @@ export default function WorkspaceSection({
 }: WorkspaceSectionProps) {
   const { createBoard } = useWorkspace();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const boards = useBoardStore((state) => state.boards);
+  const setBoards = useBoardStore((state) => state.setBoards);
 
   const handleCreate = async (data: {
     name: string;
@@ -32,6 +37,8 @@ export default function WorkspaceSection({
   }) => {
     data.cover_url = "http:xxxxx";
     await createBoard(id, data);
+    const boardsData = await getBoardsByWorkspaceId(id);
+    setBoards(boardsData);
     setCreateModalOpen(false);
   };
   const modalCreateTexts = {
@@ -76,16 +83,16 @@ export default function WorkspaceSection({
         <Button
           onClick={() => setCreateModalOpen(true)}
           className="
-      cursor-pointer
-      bg-black
-      hover:bg-gray-800
-      text-white
-      px-5
-      h-10
-      rounded-md
-      shadow-sm
-      transition
-    "
+            cursor-pointer
+            bg-black
+            hover:bg-gray-800
+            text-white
+            px-5
+            h-10
+            rounded-md
+            shadow-sm
+            transition
+          "
         >
           + Add Board
         </Button>

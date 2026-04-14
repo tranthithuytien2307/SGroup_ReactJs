@@ -37,16 +37,19 @@ export const boardAPI = {
     name,
     description,
     cover_url,
+    theme,
   }: {
     boardId: number;
     name?: string;
     description?: string;
     cover_url?: string;
+    theme?: string;
   }) => {
     return api.put(`/board/${boardId}`, {
-      ...(name !== undefined && { name }),
-      ...(description !== undefined && { description }),
-      ...(cover_url !== undefined && { cover_url }),
+      ...(name ? { name } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(cover_url ? { cover_url } : {}),
+      ...(theme ? { theme } : {}),
     });
   },
 
@@ -67,11 +70,11 @@ export const boardAPI = {
   },
 
   archiveBoard: (id: number) => {
-    return api.post(`/board/archive/${id}`);
+    return api.patch(`/board/archive/${id}`);
   },
 
   unarchiveBoard: (id: number) => {
-    return api.post(`/board/unarchive/${id}`);
+    return api.patch(`/board/unarchive/${id}`);
   },
 
   updateBackground: (

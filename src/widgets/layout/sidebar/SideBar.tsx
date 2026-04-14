@@ -9,6 +9,7 @@ import { useWorkspace } from "../../../features/workspace/WorkspaceContext";
 import { useNavigate } from "react-router-dom";
 import { PATH } from "../../../shared/config/PATH";
 import { getInformationUser } from "../../../features/auth/informationUser/model/getInformationUser";
+import { useBoardStore } from "../../../features/board/model/boardStore";
 
 interface UserType {
   id: number;
@@ -24,7 +25,8 @@ interface UserType {
 
 export default function SideBar() {
   const [dataUser, setDataUser] = useState<UserType | null>(null);
-  const [boards, setBoards] = useState<Board[]>([]);
+  const boards = useBoardStore((state) => state.boards);
+  const setBoards = useBoardStore((state) => state.setBoards);
   const { selected, setSelected } = useSelectedWorkspace();
   const { workspaces } = useWorkspace();
   const navigate = useNavigate();

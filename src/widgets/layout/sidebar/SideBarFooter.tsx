@@ -7,7 +7,9 @@ import {
   DropdownMenuSeparator,
 } from "../../../shared/ui/dropdown-menu";
 
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User, Archive } from "lucide-react";
+import { useState } from "react";
+import ArchivedWorkspaceModal from "../../workspace/ArchivedWorkspaceModal";
 
 interface UserType {
   id: number;
@@ -27,6 +29,7 @@ interface SideBarFooterProps {
 
 export default function SideBarFooter({ user }: SideBarFooterProps) {
   const navigate = useNavigate();
+  const [openArchiveModal, setOpenArchiveModal] = useState(false);
 
   const goToProfile = () => {
     navigate("/profile");
@@ -36,7 +39,6 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
     <div className="p-2 w-full">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          {/* fix: thêm w-full và overflow-hidden */}
           <footer className="w-full border-t p-3 flex items-center gap-3 hover:bg-accent data-[state=open]:bg-accent rounded-lg cursor-pointer transition-colors overflow-hidden">
             <div className="flex-shrink-0">
               <img
@@ -46,7 +48,6 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
               />
             </div>
 
-            {/* fix: flex-1 kết hợp min-w-0 để truncate hoạt động */}
             <div className="flex flex-col min-w-0 flex-1 leading-tight text-left">
               <span className="font-medium text-gray-800 truncate block">
                 {user?.name ?? "Chưa có tên"}
@@ -58,7 +59,6 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
           </footer>
         </DropdownMenuTrigger>
 
-        {/* fix: Bỏ translate cứng, dùng align và side của Radix UI (nếu dropdown dùng Radix) */}
         <DropdownMenuContent
           side="right"
           align="end"
@@ -98,6 +98,14 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
             <span className="text-sm">Settings</span>
           </DropdownMenuItem>
 
+          <DropdownMenuItem
+            onClick={() => setOpenArchiveModal(true)}
+            className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md focus:bg-gray-100"
+          >
+            <Archive className="w-4 h-4 text-gray-500" />
+            <span className="text-sm">Workspace storage</span>
+          </DropdownMenuItem>
+
           <DropdownMenuSeparator className="my-1" />
 
           <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md focus:bg-red-50 text-red-600 focus:text-red-700">
@@ -106,6 +114,12 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {openArchiveModal && (
+        <ArchivedWorkspaceModal
+          open={openArchiveModal}
+          onClose={() => setOpenArchiveModal(false)}
+        />
+      )}
     </div>
   );
 }

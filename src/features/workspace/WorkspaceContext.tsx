@@ -16,10 +16,14 @@ import {
 import { createWorkspaceInModel } from "../workspace/model/workspaceModel";
 import { workspaceAPI } from "../../entities/workspace/api/workspaceAPI";
 import { useSelectedWorkspace } from "./SelectedWorkspaceContext";
+import { useBoardStore } from "../board/model/boardStore";
+import { useWorkspaceStore } from "./model/workspaceStore";
 
 export type BoardData = {
   name: string;
   description?: string;
+  cover_url?: string;
+  theme?: string;
 };
 
 type WorkspaceContextType = {
@@ -46,7 +50,8 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { workspace, setWorkspace, loading } = useWorkspaces();
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const workspaces = useWorkspaceStore((state) => state.workspaces);
+  const setWorkspaces = useWorkspaceStore((state) => state.setWorkspaces);
   const { setSelected } = useSelectedWorkspace();
 
   useEffect(() => {
