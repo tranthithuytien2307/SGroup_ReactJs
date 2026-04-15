@@ -5,6 +5,7 @@ import type { Board } from "../../../entities/board/model/boardType";
 import { archiveWorkspace } from "./archiveWorkspace";
 import { unarchiveWorkspace } from "./unarchiveWorkspace";
 import { getWorkspaceArchive } from "./getWorkspaceArchive";
+import { updateWorkspace } from "./updateWorkspace";
 
 type WorkspaceState = {
   workspaces: Workspace[];
@@ -19,6 +20,12 @@ type WorkspaceState = {
   getBoardArchiveByWorkspaceId: (workspaceId: number) => Promise<void>;
   archiveWorkspace: (workspaceId: number) => Promise<void>;
   unarchiveWorkspace: (workspaceId: number) => Promise<void>;
+  updateWorkspace: (payload: {
+    name: string;
+    description: string;
+    is_active: boolean;
+    workspace_id: number;
+  }) => Promise<void>;
 };
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -100,6 +107,24 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }));
     } catch (error) {
       console.error("Failed to unarchive workspace:", error);
+      throw error;
+    }
+  },
+  updateWorkspace: async (payload) => {
+    try {
+      const updated = await updateWorkspace(payload);
+
+      set((state) => ({
+        workspaces: state.workspaces.map((ws) =>
+          ws.id === updated.id ? updated : ws,
+        ),
+
+        archivedWorkspaces: state.archivedWorkspaces.map((ws) =>
+          ws.id === updated.id ? updated : ws,
+        ),
+      }));
+    } catch (error) {
+      console.error("Failed to update workspace:", error);
       throw error;
     }
   },

@@ -6,4 +6,5 @@ export type Workspace = {
   description?: string;
   boards: Board[];
   countBoard: number;
+  is_active: boolean;
 };

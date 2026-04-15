@@ -8,10 +8,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "../../../shared/ui/dropdown-menu";
-import { Plus, Circle, Archive } from "lucide-react";
+import { Pencil, Circle, Archive } from "lucide-react";
 import type { Workspace } from "../../../entities/workspace/model/workspaceType";
 import { useWorkspaceStore } from "../../../features/workspace/model/workspaceStore";
 import toast from "react-hot-toast";
+import { useState } from "react";
+import EditWorkspaceModal from "../../workspace/EditWorkspaceModal";
 
 interface Props {
   workspaces: Workspace[];
@@ -25,6 +27,11 @@ export default function SideBarHeader({
   setSelected,
 }: Props) {
   const archiveWorkspace = useWorkspaceStore((state) => state.archiveWorkspace);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(
+    null,
+  );
 
   const handleArchiveWorkspace = async (id: number) => {
     console.log("Attempting to archive workspace with ID:", id);
@@ -41,7 +48,7 @@ export default function SideBarHeader({
   };
   return (
     <div className="relative p-2 h-auto">
-      <DropdownMenu>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <div className="p-2 gap-2 flex items-center cursor-pointer rounded-lg hover:bg-accent transition data-[state=open]:bg-accent">
             <div className="flex items-center gap-2 flex-1">
@@ -62,7 +69,16 @@ export default function SideBarHeader({
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="rounded-lg border bg-white shadow-xl p-1 z-50 absolute translate-x-[60%] translate-y-[-20%] w-72">
-          <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+          <div className="flex items-center justify-between px-2 py-1">
+            <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+
+            <button
+              onClick={() => setOpen(false)}
+              className="text-gray-400 hover:text-black"
+            >
+              ✕
+            </button>
+          </div>
 
           <div className="max-h-60 overflow-y-auto pr-1">
             {Array.isArray(workspaces) &&
@@ -96,6 +112,19 @@ export default function SideBarHeader({
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
+                        setEditingWorkspace(ws);
+                        setOpenEdit(true);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4 text-muted-foreground hover:text-blue-500" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="opacity-0 group-hover:opacity-100 transition"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
                         handleArchiveWorkspace(ws.id);
                       }}
                     >
@@ -109,6 +138,12 @@ export default function SideBarHeader({
                 </DropdownMenuItem>
               ))}
           </div>
+          {openEdit && editingWorkspace && (
+            <EditWorkspaceModal
+              workspace={editingWorkspace}
+              onClose={() => setOpenEdit(false)}
+            />
+          )}
 
           <DropdownMenuSeparator />
         </DropdownMenuContent>

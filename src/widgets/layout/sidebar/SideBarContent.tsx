@@ -1,6 +1,12 @@
 import { useState } from "react";
 import LoadingSpinner from "../../../shared/ui/LoadingSpinner";
-import { ChevronDown, ChevronRight, LayoutGrid, LayoutTemplate, Archive  } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  LayoutGrid,
+  LayoutTemplate,
+  Archive,
+} from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PATH } from "../../../shared/config/PATH";
 import ArchivedBoardsModal from "../../workspace/ArchivedBoardsModal";
@@ -130,12 +136,12 @@ export default function SideBarContent({ boards }: Props) {
                 <button
                   key={board.id}
                   onClick={() => handleBoardDetail(board.id)}
+                  title={board.name}
                   className={`
-                    text-sm px-2 py-1 rounded-md text-left transition-colors cursor-pointer
-                    ${
-                      isActive ? "bg-gray-200 font-medium" : "hover:bg-gray-100"
-                    }
-                  `}
+                  text-sm px-2 py-1 rounded-md text-left transition-colors cursor-pointer
+                  w-full truncate
+                  ${isActive ? "bg-gray-200 font-medium" : "hover:bg-gray-100"}
+                `}
                 >
                   {board.name}
                 </button>
