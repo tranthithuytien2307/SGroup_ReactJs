@@ -10,7 +10,11 @@ export const useWorkspaces = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selected?.id) {
+      setWorkspace(null);
+      setLoading(false);
+      return;
+    }
 
     const fetch = async () => {
       try {
@@ -24,8 +28,8 @@ export const useWorkspaces = () => {
       }
     };
 
-    fetch();
-  }, [selected]);
+    void fetch();
+  }, [selected?.id]);
 
   return { workspace, setWorkspace, loading };
 };

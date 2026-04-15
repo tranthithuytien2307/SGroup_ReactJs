@@ -6,8 +6,9 @@ export async function submit(email: string, password: string) {
     const res = await loginApi.login({ email, password });
     const { accessToken, refreshToken } = res.data.responseObject;
 
-    const { setTokens } = useAuthStore.getState();
+    const { setTokens, fetchUser } = useAuthStore.getState();
     setTokens(accessToken, refreshToken);
+    await fetchUser();
 
     return { success: true };
   } catch (err: any) {

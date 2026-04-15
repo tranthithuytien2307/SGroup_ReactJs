@@ -12,6 +12,8 @@ type ListState = {
     listId: number,
     toBoardId: number,
     newIndex: number,
+    boardVersion: number,
+    targetBoardVersion?: number,
   ) => Promise<void>;
 
   renameList: (listId: number, newTitle: string) => Promise<void>;
@@ -41,7 +43,13 @@ export const useListStore = create<ListState>((set, get) => ({
     set({ lists: sortedLists });
   },
 
-  moveList: async (listId, toBoardId, newIndex) => {
+  moveList: async (
+    listId,
+    toBoardId,
+    newIndex,
+    boardVersion,
+    targetBoardVersion,
+  ) => {
     const previousLists = get().lists;
 
     const listToMove = previousLists.find((l) => l.id === listId);
@@ -71,7 +79,13 @@ export const useListStore = create<ListState>((set, get) => ({
     }
 
     try {
-      await listAPI.moveList(listId, toBoardId, newIndex);
+      await listAPI.moveList(
+        listId,
+        toBoardId,
+        newIndex,
+        boardVersion,
+        targetBoardVersion,
+      );
 
       if (!isSameBoard) {
         return;
@@ -92,7 +106,14 @@ export const useListStore = create<ListState>((set, get) => ({
     });
 
     try {
-      await listAPI.updateList({ id: listId, name: newTitle });
+      const currentList = previousLists.find((list) => list.id === listId);
+      if (!currentList) return;
+
+      await listAPI.updateList({
+        id: listId,
+        version: currentList.version,
+        name: newTitle,
+      });
     } catch (error) {
       set({ lists: previousLists });
       console.error("Failed to rename list:", error);
@@ -104,6 +125,7 @@ export const useListStore = create<ListState>((set, get) => ({
 
     const tempList: List = {
       id: Date.now(),
+      version: 0,
       board_id: boardId,
       name,
       position: previousLists.length + 1,
@@ -153,6 +175,7 @@ export const useListStore = create<ListState>((set, get) => ({
 
     const tempList: List = {
       id: Date.now(),
+      version: 0,
       board_id: listToCopy.board_id,
       name: newName,
       position: listToCopy.position + 1,

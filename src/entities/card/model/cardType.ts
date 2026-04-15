@@ -8,6 +8,7 @@ export type CardMember = {
 
 export type Card = {
   id: number;
+  version: number;
   list_id: number;
   title: string;
   position: number;

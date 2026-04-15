@@ -12,6 +12,8 @@ type Props = {
 export default function MoveListModal({ onClose, onBack, listId }: Props) {
   const boards = useBoardStore((s) => s.boards);
   const getBoardsByUser = useBoardStore((s) => s.getBoardsByUser);
+  const currentBoard = useBoardStore((s) => s.currentBoard);
+  const lists = useListStore((s) => s.lists);
 
   const moveList = useListStore((s) => s.moveList);
 
@@ -55,8 +57,19 @@ export default function MoveListModal({ onClose, onBack, listId }: Props) {
 
   const handleMove = async () => {
     if (!selectedBoard) return;
+    const currentList = lists.find((list) => list.id === listId);
+    const targetBoard = boards.find((board) => board.id === selectedBoard);
+    const sourceBoardVersion = currentBoard?.version;
 
-    await moveList(listId, selectedBoard, selectedPos - 1);
+    if (!currentList || sourceBoardVersion === undefined) return;
+
+    await moveList(
+      listId,
+      selectedBoard,
+      selectedPos - 1,
+      sourceBoardVersion,
+      currentList.board_id !== selectedBoard ? targetBoard?.version : undefined,
+    );
 
     onClose();
   };

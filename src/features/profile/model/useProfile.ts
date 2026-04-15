@@ -1,16 +1,42 @@
 import { useState } from "react";
 import { userAPI } from "../../../entities/users/api/userAPI";
+import { useAuthStore } from "../../../entities/auth/model/auth.store";
+import type { User } from "../../../entities/users/type/types";
 
 export function useProfile() {
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
-  const updateProfile = async (name: string, email: string) => {
+  const syncAuthUser = (partialUser: Partial<User>) => {
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) return;
+
+    const nextUser: User = {
+      ...currentUser,
+      ...partialUser,
+    };
+
+    localStorage.setItem("user", JSON.stringify(nextUser));
+    useAuthStore.setState({ user: nextUser });
+  };
+
+  const updateProfile = async (name: string, email: string, bio?: string) => {
     try {
       setLoading(true);
-      await userAPI.updateProfile({ name, email });
+      const res = await userAPI.updateProfile({ name, email, bio: bio ?? "" });
+      const updatedUser = res.data.responseObject;
+
+      syncAuthUser({
+        name: updatedUser.name,
+        email: updatedUser.email,
+        bio: updatedUser.bio ?? null,
+        avatar_url: updatedUser.avatar_url ?? null,
+      });
+
+      return updatedUser;
     } catch (err: any) {
       alert(err?.response?.data?.message || "Update failed");
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -20,7 +46,11 @@ export function useProfile() {
     try {
       setAvatarLoading(true);
       const res = await userAPI.uploadAvatar(file);
-      return res.data.responseObject.avatar_url;
+      const avatarUrl = res.data.responseObject.avatar_url;
+
+      syncAuthUser({ avatar_url: avatarUrl });
+
+      return avatarUrl;
     } catch (err: any) {
       alert(err?.response?.data?.message || "Upload avatar failed");
     } finally {

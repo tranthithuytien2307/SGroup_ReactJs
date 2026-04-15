@@ -21,6 +21,7 @@ const BoardPage = lazy(() => import("../../pages/BoardPage"));
 const ResetPasswordPage = lazy(() => import("../../pages/ResetPasswordPage"));
 const UpdateProfilePage = lazy(() => import("../../pages/EditProfilePage"));
 const TemplatePage = lazy(() => import("../../pages/TemplatePage"));
+const NotFoundPage = lazy(() => import("../../pages/NotFoundPage"));
 
 export default function PATHS() {
   return (
@@ -60,6 +61,17 @@ export default function PATHS() {
             <Route path="/templates" element={<TemplatePage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
+
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <NotFoundPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

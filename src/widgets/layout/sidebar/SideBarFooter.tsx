@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -7,8 +8,9 @@ import {
   DropdownMenuSeparator,
 } from "../../../shared/ui/dropdown-menu";
 
+import { useAuthStore } from "../../../entities/auth/model/auth.store";
+import { PATH } from "../../../shared/config/PATH";
 import { LogOut, Settings, User, Archive } from "lucide-react";
-import { useState } from "react";
 import ArchivedWorkspaceModal from "../../workspace/ArchivedWorkspaceModal";
 
 interface UserType {
@@ -29,10 +31,25 @@ interface SideBarFooterProps {
 
 export default function SideBarFooter({ user }: SideBarFooterProps) {
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [openArchiveModal, setOpenArchiveModal] = useState(false);
 
   const goToProfile = () => {
     navigate("/profile");
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      navigate(PATH.LOGIN, { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -108,9 +125,15 @@ export default function SideBarFooter({ user }: SideBarFooterProps) {
 
           <DropdownMenuSeparator className="my-1" />
 
-          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md focus:bg-red-50 text-red-600 focus:text-red-700">
+          <DropdownMenuItem
+            className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md focus:bg-red-50 text-red-600 focus:text-red-700"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
             <LogOut className="w-4 h-4" />
-            <span className="text-sm font-medium">Log out</span>
+            <span className="text-sm font-medium">
+              {isLoggingOut ? "Logging out..." : "Log out"}
+            </span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
